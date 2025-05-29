@@ -1,0 +1,26 @@
+# dependencies
+node_modules/
+
+# environment variables
+.env
+
+# log files
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS-specific
+.DS_Store
+
+# build files (if using TypeScript or Babel)
+dist/
+build/
+
+# IDE-specific
+.vscode/
+.idea/
+
+# PM2 process logs (optional)
+pids/
+logs/
