@@ -3,8 +3,13 @@ import dotenv from 'dotenv'
 import { connectDB } from './config/mongodb.js';
 import cors from 'cors'
 import cookieParser from 'cookie-parser';
-import errorHandler from './middleware/errorHandlerMiddleware.js';
+import { errorHandler } from './middleware/errorHandlerMiddleware.js';
 
+
+import authRoutes from './routes/authRoutes.js'
+import userRoutes from './routes/userRoutes.js'
+import agentRoutes from './routes/agentRoutes.js'
+import PropertyRoutes from './routes/propertyRoutes.js'
 
 dotenv.config();
 const app = express();
@@ -28,6 +33,16 @@ app.get('/', (req, res) => {
 });
 
 app.use(errorHandler)
+
+app.use('/api/auth', authRoutes);
+app.use('/api/user', userRoutes);
+app.use('/api/agent', agentRoutes);
+app.use('/api/property', PropertyRoutes);
+
+
+
+
+
 app.listen(PORT, () => {
     console.log(`server running on ${PORT}`);
     
