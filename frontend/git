@@ -1,0 +1,12 @@
+git pull origin dev
+
+
+
+git add frontend/
+git commit -m "Updated login page layout in frontend"
+git push origin dev
+
+
+git log --oneline
+
+git log -- backend/
