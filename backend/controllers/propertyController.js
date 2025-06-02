@@ -68,7 +68,6 @@ export const getPropertyById = async (req, res, next) => {
   }
 };
 
-// Get property recommendations
 export const getPropertyRecommendations = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -79,11 +78,11 @@ export const getPropertyRecommendations = async (req, res, next) => {
 
     const { location, price, type } = property;
     const query = {
-      _id: { $ne: id }, // Exclude the current property
+      _id: { $ne: id }, 
       isActive: true,
       type,
-      location: { $regex: location.split(',')[0], $options: 'i' }, // Match city or first part
-      price: { $gte: price * 0.8, $lte: price * 1.2 }, // ±20% price range
+      location: { $regex: location.split(',')[0], $options: 'i' }, 
+      price: { $gte: price * 0.8, $lte: price * 1.2 }, 
     };
 
     const recommendations = await Property.find(query).limit(5).sort({ views: -1 });
