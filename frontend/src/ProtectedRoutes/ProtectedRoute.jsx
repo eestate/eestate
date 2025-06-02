@@ -1,24 +1,21 @@
-// components/ProtectedRoute.js
 "use client"
 
 import { useAuth } from '../hooks/useAuth';
 import AuthModal from '../pages/AuthModal';
+import { useState } from 'react';
 
 export const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, isLoading } = useAuth();
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   if (isLoading) {
     return <div>Loading...</div>;
   }
 
-  if (!isAuthenticated) {
-    return (
-      <>
-        <AuthModal isOpen={true} onClose={() => {}} />
-        {children}
-      </>
-    );
-  }
-
-  return children;
+  return (
+    <>
+      {children}
+      <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
+    </>
+  );
 };

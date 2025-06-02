@@ -1,13 +1,13 @@
-// features/auth/authApiSlice.js
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
 export const authApi = createApi({
     reducerPath: 'authApi',
     baseQuery: fetchBaseQuery({
         baseUrl: 'http://localhost:3003/api/auth',
-        credentials: 'include', // For cookies
+        credentials: 'include', // Ensure cookies are sent
         prepareHeaders: (headers, { getState }) => {
-            // If you need to add headers, do it here
+            // Debug: Log if cookie is included
+            console.log('Sending request with cookies:', document.cookie);
             return headers;
         }
     }),
@@ -19,7 +19,6 @@ export const authApi = createApi({
                 body: credentials
             }),
             transformResponse: (response) => {
-                // Store user data in localStorage if needed
                 if (response.user) {
                     localStorage.setItem('user', JSON.stringify(response.user));
                 }
@@ -37,20 +36,18 @@ export const authApi = createApi({
             query: () => ({
                 url: 'logout',
                 method: 'POST',
-                credentials: 'include' // Important for cookies
+                credentials: 'include'
             }),
             async onQueryStarted(arg, { dispatch, queryFulfilled }) {
                 try {
                     await queryFulfilled;
-                    // Clear all cached data
                     dispatch(api.util.resetApiState());
-                    // Remove user data from localStorage
                     localStorage.removeItem('user');
                 } catch (error) {
                     console.error('Logout failed:', error);
                 }
             },
-            invalidatesTags: ['Auth'] // Invalidate all auth-related cache
+            invalidatesTags: ['Auth']
         }),
         checkAuth: builder.query({
             query: () => 'check',
@@ -60,7 +57,8 @@ export const authApi = createApi({
             query: (profileData) => ({
                 url: 'profile',
                 method: 'PUT',
-                body: profileData
+                body: profileData,
+                credentials: 'include' 
             }),
             invalidatesTags: ['Auth']
         })

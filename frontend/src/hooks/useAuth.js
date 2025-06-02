@@ -1,14 +1,22 @@
-
-import { useCheckAuthQuery } from '@/redux/services/authApi';
+import { useCheckAuthQuery } from "@/redux/services/authApi";
 
 export const useAuth = () => {
-  const { data, isLoading, isError,refetch } = useCheckAuthQuery();
+  const { data, isLoading, isError, refetch } = useCheckAuthQuery(undefined, {
+    refetchOnMountOrArgChange: true,  
+  });
+
+
+  const user = data?.user || JSON.parse(localStorage.getItem('user')) || null;
   
-  const localUser = JSON.parse(localStorage.getItem('user'));
-  
+
+  const isAuthenticated = Boolean(
+    data?.isAuthenticated || 
+    (user && document.cookie.includes('token'))
+  );
+
   return {
-    user: data?.user || localUser,
-    isAuthenticated: data?.isAuthenticated || !!localUser,
+    user,
+    isAuthenticated,
     isLoading,
     isError,
     refetchAuth: refetch
