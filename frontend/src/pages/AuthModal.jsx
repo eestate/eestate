@@ -1,17 +1,18 @@
+/* eslint-disable no-unused-vars */
 "use client"
 
 import { useEffect, useState } from "react"
-import { Dialog, DialogContent } from "./ui/dialog"
-import { Button } from "./ui/button"
-import { Input } from "./ui/input"
-import { Label } from "./ui/label"
-import { Checkbox } from "./ui/checkbox"
-import { RadioGroup, RadioGroupItem } from "./ui/radio-group"
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
+import { Dialog, DialogContent } from "../components/ui/dialog"
+import { Button } from "../components/ui/button"
+import { Input } from "../components/ui/input"
+import { Label } from "../components/ui/label"
+import { Checkbox } from "../components/ui/checkbox"
+import { RadioGroup, RadioGroupItem } from "../components/ui/radio-group"
+import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar"
 import { X, Upload, User } from "lucide-react"
 import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 import { useLoginMutation, useRegisterMutation, useUpdateProfileMutation } from "@/redux/services/authApi"
-import { useAuth } from "./hooks/useAuth"
+import { useAuth } from "../hooks/useAuth"
 import { toast } from "sonner"
 
 

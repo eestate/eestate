@@ -1,8 +1,8 @@
 // components/ProtectedRoute.js
 "use client"
 
-import { useAuth } from './hooks/useAuth';
-import AuthModal from './AuthModal';
+import { useAuth } from '../hooks/useAuth';
+import AuthModal from '../pages/AuthModal';
 
 export const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, isLoading } = useAuth();

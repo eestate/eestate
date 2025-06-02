@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import profile from '../assets/image.png'
-import AuthModal from "./AuthModal";
+import AuthModal from "../pages/AuthModal";
 import MenuModal from "./MenuModel";
 import { Avatar, AvatarImage, AvatarFallback } from "./ui/avatar";
 import { User, ChevronDown, LogOut } from "lucide-react";
@@ -12,9 +12,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
-import { useAuth } from "./hooks/useAuth";
+import { useAuth } from "../hooks/useAuth";
 import { useLogoutMutation } from "@/redux/services/authApi";
-import { useNavigate } from "react-router-dom";
+// import { useNavigate } from "react-router-dom";
 import { toast } from "sonner"
 
 const Navbar = () => {
@@ -22,7 +22,7 @@ const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user, isAuthenticated } = useAuth();
   const [logout] = useLogoutMutation();
-  const navigate = useNavigate()
+  // const navigate = useNavigate()
 
 // Navbar.js
 const handleLogout = async () => {
@@ -44,15 +44,15 @@ const handleLogout = async () => {
         <h2 className="font-manrope text-4xl lg:text-8xl font-light lg:ml-10 lg:mt-10 leading-none">eestate</h2>
 
         <div className="hidden lg:block text-center">
-          <h6 className="font-marcellus leading-tight m-0 text-sm">
+          <h6 className="font-marcellus leading-tight m-0 text-sm text-left">
             Buy or sell your dream <br />
             properties easily and securely
           </h6>
         </div>
 
         <div className="hidden lg:block text-center">
-          <h3 className="font-marcellus leading-tight m-0 text-sm">
-            Based on <br /> India
+          <h3 className="font-marcellus leading-tight m-0 text-sm text-left">
+            Based on <br /> <span className="text-[#616161]" >India</span>
           </h3>
         </div>
 
@@ -93,7 +93,7 @@ const handleLogout = async () => {
                 onClick={() => setIsLoginOpen(true)}
               />
               <p
-                className="font-mplus text-sm lg:text-base font-bold cursor-pointer"
+                className="font-mplus text-sm lg:text-base font-bold  cursor-pointer "
                 onClick={() => setIsMenuOpen(true)}
               >
                 MENU

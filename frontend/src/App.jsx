@@ -4,7 +4,7 @@ import Login from './pages/Login'
 import Home from './pages/Home'
 import Navbar from './components/Navbar'
 import { useLocation } from 'react-router-dom'
-import { ProtectedRoute } from './components/ProtectedRoute'
+import { ProtectedRoute } from './ProtectedRoutes/ProtectedRoute'
 
 const App = () => {
   const location = useLocation()
