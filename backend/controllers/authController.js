@@ -88,3 +88,65 @@ export const login = async (req, res, next) => {
     next(error);
   }
 };
+
+
+export const updateProfile = async (req, res, next) => {
+  try {
+    const { gender, phone, profilePic } = req.body;
+    const user = await User.findById(req.user._id);
+    
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (gender) user.gender = gender;
+    if (phone) user.phone = phone;
+    if (profilePic) user.profilePic = profilePic;
+
+    const updatedUser = await user.save();
+    
+    res.status(200).json({
+      _id: updatedUser._id,
+      name: updatedUser.name,
+      email: updatedUser.email,
+      gender: updatedUser.gender,
+      phone: updatedUser.phone,
+      profilePic: updatedUser.profilePic,
+      role: updatedUser.role
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const checkAuth = async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ isAuthenticated: false });
+    }
+    
+    res.status(200).json({
+      isAuthenticated: true,
+      user: req.user
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+
+export const logout = async (req, res) => {
+  try {
+    res.clearCookie('token', '', {
+      httpOnly: true,
+      expires: new Date(0),
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict'
+    });
+
+    res.status(200).json({ message: 'Logged out successfully' });
+  } catch (error) {
+    console.error('Logout error:', error);
+    res.status(500).json({ message: 'Logout failed' });
+  }
+};
