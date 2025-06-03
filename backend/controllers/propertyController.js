@@ -1,13 +1,16 @@
-import { Property } from '../models/Property.js';
+
+
+import Property from '../models/Property.js';
 import User from '../models/User.js';
+
 
 export const getAllProperties = async (req, res, next) => {
   try {
-    const { page = 1, limit = 10, address, minPrice, maxPrice, propertyType, subCategory, for: type, keyword } = req.query;
-    const query = { isActive: true, status: 'available' };
+    const { page = 1, limit = 10, location, minPrice, maxPrice, propertyType, for: type, keyword } = req.query;
+    const query = { isActive: true };
 
-    if (address) {
-      query.address = { $regex: address, $options: 'i' };
+    if (location) {
+      query.location = { $regex: location, $options: 'i' };
     }
     if (minPrice) {
       query.price = { ...query.price, $gte: Number(minPrice) };
@@ -16,17 +19,14 @@ export const getAllProperties = async (req, res, next) => {
       query.price = { ...query.price, $lte: Number(maxPrice) };
     }
     if (propertyType) {
-      query.propertyType = { $regex: propertyType, $options: 'i' };
-    }
-    if (subCategory) {
-      query.subCategory = { $regex: subCategory, $options: 'i' };
+      query.category = { $regex: propertyType, $options: 'i' };
     }
     if (type) {
       query.type = type === 'buy' ? 'sale' : type;
     }
     if (keyword) {
       query.$or = [
-        { name: { $regex: keyword, $options: 'i' } },
+        { title: { $regex: keyword, $options: 'i' } },
         { description: { $regex: keyword, $options: 'i' } },
       ];
     }
@@ -35,7 +35,7 @@ export const getAllProperties = async (req, res, next) => {
       .limit(Number(limit))
       .skip((Number(page) - 1) * Number(limit))
       .sort({ createdAt: -1 });
-
+    
     await Promise.all(
       properties.map(property =>
         Property.findByIdAndUpdate(property._id, { $inc: { views: 1 } }, { new: true })
@@ -58,8 +58,8 @@ export const getPropertyById = async (req, res, next) => {
   try {
     const { id } = req.params;
     const property = await Property.findById(id);
-    if (!property || !property.isActive || property.status === 'sold') {
-      return res.status(404).json({ message: 'Property not found, not active, or sold' });
+    if (!property || !property.isActive) {
+      return res.status(404).json({ message: 'Property not found or not active' });
     }
     await Property.findByIdAndUpdate(id, { $inc: { views: 1 } });
     res.status(200).json(property);
@@ -68,23 +68,22 @@ export const getPropertyById = async (req, res, next) => {
   }
 };
 
+// Get property recommendations
 export const getPropertyRecommendations = async (req, res, next) => {
   try {
     const { id } = req.params;
     const property = await Property.findById(id);
-    if (!property || !property.isActive || property.status === 'sold') {
-      return res.status(404).json({ message: 'Property not found, not active, or sold' });
+    if (!property || !property.isActive) {
+      return res.status(404).json({ message: 'Property not found or not active' });
     }
 
-    const { address, price, type, subCategory } = property;
+    const { location, price, type } = property;
     const query = {
-      _id: { $ne: id },
+      _id: { $ne: id }, // Exclude the current property
       isActive: true,
-      status: 'available',
       type,
-      subCategory,
-      address: { $regex: address.split(',')[0], $options: 'i' },
-      price: { $gte: price * 0.8, $lte: price * 1.2 },
+      location: { $regex: location.split(',')[0], $options: 'i' }, // Match city or first part
+      price: { $gte: price * 0.8, $lte: price * 1.2 }, // ±20% price range
     };
 
     const recommendations = await Property.find(query).limit(5).sort({ views: -1 });
@@ -100,7 +99,7 @@ export const getWishlist = async (req, res, next) => {
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
-    res.status(200).json(user.wishlist.filter(property => property.isActive && property.status === 'available'));
+    res.status(200).json(user.wishlist.filter(property => property.isActive));
   } catch (error) {
     next(error);
   }
@@ -110,8 +109,8 @@ export const addToWishlist = async (req, res, next) => {
   try {
     const { propertyId } = req.params;
     const property = await Property.findById(propertyId);
-    if (!property || !property.isActive || property.status === 'sold') {
-      return res.status(404).json({ message: 'Property not found, not active, or sold' });
+    if (!property || !property.isActive) {
+      return res.status(404).json({ message: 'Property not found or not active' });
     }
     const user = await User.findById(req.user._id);
     if (!user) {

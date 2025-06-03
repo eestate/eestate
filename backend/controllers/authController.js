@@ -100,17 +100,15 @@ export const login = async (req, res, next) => {
 };
 
 
-// authController.js
 export const updateProfile = async (req, res, next) => {
   try {
     const { gender, phone, profilePic } = req.body;
-    const user = await User.findById(req.user._id); // Make sure req.user is set
+    const user = await User.findById(req.user._id);
     
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Update fields only if they're provided
     if (gender) user.gender = gender;
     if (phone) user.phone = phone;
     if (profilePic) user.profilePic = profilePic;
@@ -131,7 +129,6 @@ export const updateProfile = async (req, res, next) => {
   }
 };
 
-// authController.js
 export const checkAuth = async (req, res) => {
 
   console.log('Check auth headers:', req.headers);
