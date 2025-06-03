@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react";
-import profile from '../assets/image.png'
+// import profile from '../assets/image.png'
 import AuthModal from "../pages/AuthModal";
 import MenuModal from "./MenuModel";
 import { Avatar, AvatarImage, AvatarFallback } from "./ui/avatar";
@@ -130,7 +130,7 @@ const Navbar = () => {
         <p className="font-marcellus text-xs text-center">Based on India</p>
       </div>
 
-      <AuthModal isOpen={isLoginOpen} onClose={() => { setIsLoginOpen(false); refetch(); }} />
+      <AuthModal isOpen={isLoginOpen} onClose={() => { setIsLoginOpen(false);  }} />
 
       <MenuModal
         isOpen={isMenuOpen}
