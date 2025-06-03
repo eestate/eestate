@@ -1,10 +1,10 @@
 import React from 'react'
 import { Routes, Route} from 'react-router-dom'
-import Login from './pages/Login'
 import Home from './pages/Home'
 import Navbar from './components/Navbar'
 import { useLocation } from 'react-router-dom'
-import { ProtectedRoute } from './components/ProtectedRoute'
+import { ProtectedRoute } from './ProtectedRoutes/ProtectedRoute'
+import Profile from './pages/user/Profile'
 
 const App = () => {
   const location = useLocation()
@@ -13,8 +13,8 @@ const App = () => {
     <div>
       {location.pathname !== '/login' && <Navbar />}
       <Routes>
-        <Route path='/' element={<ProtectedRoute><Home /></ProtectedRoute>} />
-        <Route path='/login' element={<Login />} />
+        <Route path='/' element={<Home />} />
+        <Route path='/profile' element={<ProtectedRoute><Profile/></ProtectedRoute>} />
       </Routes>
     </div>
   )
