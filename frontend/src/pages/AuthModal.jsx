@@ -67,13 +67,28 @@ export default function AuthModal({ isOpen, onClose }) {
   const [register, { isLoading: isRegistering }] = useRegisterMutation()
   const [updateProfile] = useUpdateProfileMutation()
 
+  // In AuthModal component
   useEffect(() => {
-    // Only close the modal for login, not during signup-to-profile-completion
+    const checkAuthStatus = async () => {
+      if (isOpen) {
+        await refetchAuth();
+      }
+    };
+    checkAuthStatus();
+  }, [isOpen, refetchAuth]);
+
+  useEffect(() => {
     if (isAuthenticated && isOpen && currentStep === "login") {
-      resetModal()
-      onClose()
+      const user = JSON.parse(localStorage.getItem('user'));
+      if (user) {
+        const role = user?.role;
+        if (role === "user") navigate("/");
+        else if (role === "agent") navigate("/agent");
+        else if (role === "admin") navigate("/admin");
+        onClose();
+      }
     }
-  }, [isAuthenticated, isOpen, currentStep, onClose])
+  }, [isAuthenticated, isOpen, currentStep, navigate, onClose]);
 
   const handleGoogleAuth = async () => {
     try {
@@ -103,14 +118,16 @@ export default function AuthModal({ isOpen, onClose }) {
     try {
       const response = await login(data).unwrap()
       localStorage.setItem('user', JSON.stringify(response.user))
-      await refetchAuth(); // Force re-check of auth state
-      onClose();
-      toast.success("Login successful!")
-      const role = response.user?.role
-      if (role === "user") navigate("/")
-      else if (role === "agent") navigate("/agent")
-      else if (role === "admin") navigate("/admin")
-      onClose()
+      await refetchAuth();
+
+      if (response.user) {
+        toast.success("Login successful!");
+        const role = response.user?.role;
+        if (role === "user") navigate("/");
+        else if (role === "agent") navigate("/agent");
+        else if (role === "admin") navigate("/admin");
+        onClose();
+      }
     } catch (error) {
       console.error('Login failed:', error)
       toast.error(error.data?.message || "Login failed. Please try again.")
@@ -136,7 +153,7 @@ export default function AuthModal({ isOpen, onClose }) {
     }
   }
 
-const handleProfileCompletion = async (data) => {
+  const handleProfileCompletion = async (data) => {
     try {
       const response = await updateProfile({
         gender: data.gender,
@@ -160,7 +177,7 @@ const handleProfileCompletion = async (data) => {
       toast.error(error.data?.message || "Failed to update profile. Please try again.")
       profileForm.setError("root", { message: error.data?.message || "Profile update failed" })
     }
-}
+  }
 
   const handleSkipProfile = () => {
     const user = JSON.parse(localStorage.getItem('user'))
@@ -536,26 +553,24 @@ const handleProfileCompletion = async (data) => {
               </form>
             )}
           </div>
-          <div className="flex-1 bg-gradient-to-br from-blue-50 to-blue-100 flex flex-col justify-center items-center text-center p-6 lg:p-10">
-            <div className="mb-6">
-              <h2 className="text-4xl lg:text-6xl font-light text-gray-800 mb-4">eestate</h2>
-              <div className="w-20 h-20 lg:w-32 lg:h-32 bg-blue-200 rounded-full flex items-center justify-center mx-auto mb-6">
-                <span className="text-2xl lg:text-4xl">🏠</span>
-              </div>
-            </div>
-            <h3 className="text-xl lg:text-2xl font-semibold text-gray-800 mb-4">
-              {currentStep === "login" && "Welcome Back"}
-              {currentStep === "signup" && "Join Us"}
-              {currentStep === "profile-completion" && "Almost There!"}
-            </h3>
-            <p className="text-gray-600 text-sm lg:text-base leading-relaxed max-w-sm">
-              {currentStep === "login" && "Sign in to access your real estate dashboard and manage your properties."}
-              {currentStep === "signup" &&
-                "Buy or sell or list properties. Join our to us to explore top real estate opportunities with trusted guidance and support."}
-              {currentStep === "profile-completion" &&
-                "Authenticate to complete your profile for property recommendations and connect with the right agents."}
-            </p>
-          </div>
+          <div className="flex-1 bg-gradient-to-br from-blue-100 to-blue-200 flex flex-col justify-center items-center text-center p-6 lg:p-8">
+  <div className="mb-3">
+    <h2 className="text-2xl lg:text-3xl font-light text-gray-900 mb-2 tracking-wide">eestate</h2>
+    <div className="w-14 h-14 lg:w-16 lg:h-16 bg-blue-300 rounded-full flex items-center justify-center mx-auto mb-3 shadow-sm">
+      <span className="text-lg lg:text-xl">🏠</span>
+    </div>
+  </div>
+  <h3 className="text-base lg:text-lg font-medium text-gray-900 mb-2">
+    {currentStep === "login" && "Welcome Back"}
+    {currentStep === "signup" && "Join Us"}
+    {currentStep === "profile-completion" && "Complete Your Profile"}
+  </h3>
+  <p className="text-gray-700 text-xs lg:text-sm leading-relaxed max-w-[240px]">
+    {currentStep === "login" && "Access your dashboard to manage properties seamlessly."}
+    {currentStep === "signup" && "Start exploring real estate opportunities today."}
+    {currentStep === "profile-completion" && "Tailor your profile for personalized recommendations."}
+  </p>
+</div>
         </div>
       </DialogContent>
     </Dialog>

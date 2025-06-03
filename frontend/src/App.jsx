@@ -5,6 +5,9 @@ import Navbar from './components/Navbar'
 import { useLocation } from 'react-router-dom'
 import { ProtectedRoute } from './ProtectedRoutes/ProtectedRoute'
 import Profile from './pages/user/Profile'
+import Footer from './components/Footer'
+import PropertyListing from './pages/PropertListing'
+import PropertyDetail from './pages/PropertDetail'
 
 const App = () => {
   const location = useLocation()
@@ -15,7 +18,10 @@ const App = () => {
       <Routes>
         <Route path='/' element={<Home />} />
         <Route path='/profile' element={<ProtectedRoute><Profile/></ProtectedRoute>} />
+        <Route path='/properties' element={<PropertyListing/>} />
+        <Route path="/property/:id" element={<PropertyDetail />} />
       </Routes>
+      <Footer/>
     </div>
   )
 }

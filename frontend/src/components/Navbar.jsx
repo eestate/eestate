@@ -13,14 +13,23 @@ import {
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 import { useAuth } from "../hooks/useAuth";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner"
 
 const Navbar = () => {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { user, isAuthenticated, isLoading  } = useAuth();
+  const { user, isAuthenticated, isLoading, logout, isLoggingOut } = useAuth();
   const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    const success = await logout();
+    if (success) {
+      toast.success('Logged out successfully');
+    } else {
+      toast.error('Logout failed. Please try again.');
+    }
+  };
 
   const handleProfileClick = () => {
     if (isAuthenticated) {
@@ -30,7 +39,7 @@ const Navbar = () => {
     }
   };
 
-    if (isLoading) {
+  if (isLoading) {
     return (
       <div className="flex justify-between items-center px-4 lg:px-10 py-4">
         <h2 className="font-manrope text-4xl lg:text-8xl font-light">eestate</h2>
@@ -43,7 +52,7 @@ const Navbar = () => {
   return (
     <>
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center px-4 lg:px-10 py-4 mt-0 lg:mt-[-35px] gap-4 lg:gap-0">
-        <h2 className="font-manrope text-4xl lg:text-8xl font-light lg:ml-10 lg:mt-10 leading-none">eestate</h2>
+        <Link to="/"><h2 className="font-manrope text-4xl lg:text-8xl font-light lg:ml-10 lg:mt-10 leading-none">eestate</h2></Link>
 
         <div className="hidden lg:block text-center">
           <h6 className="font-marcellus leading-tight m-0 text-sm text-left">
@@ -59,34 +68,34 @@ const Navbar = () => {
         </div>
 
         <div className="flex items-center gap-3 cursor-pointer lg:mr-14">
-      {isAuthenticated ? (
-        <div className="flex items-center gap-3">
-          <DropdownMenu>
-            <DropdownMenuTrigger className="flex items-center gap-2 focus:outline-none">
-              <Avatar className="w-8 h-8 lg:w-10 lg:h-10">
-                <AvatarImage src={user?.profilePic} className="object-cover" />
-                <AvatarFallback className="bg-gray-200">
-                  {user?.name ? (
-                    user.name.charAt(0).toUpperCase()
-                  ) : (
-                    <User className="w-4 h-4" />
-                  )}
-                </AvatarFallback>
-              </Avatar>
-              <ChevronDown className="w-4 h-4 text-gray-600" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-48" align="end">
-              <DropdownMenuItem onClick={handleProfileClick}>
-                Profile
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => {
-                logout();
-                window.location.reload(); // Ensure full state reset
-              }}>
-                Logout
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {isAuthenticated ? (
+            <div className="flex items-center gap-3">
+              <DropdownMenu>
+                <DropdownMenuTrigger className="flex items-center gap-2 focus:outline-none">
+                  <Avatar className="w-8 h-8 lg:w-10 lg:h-10">
+                    <AvatarImage src={user?.profilePic} className="object-cover" />
+                    <AvatarFallback className="bg-gray-200">
+                      {user?.name ? (
+                        user.name.charAt(0).toUpperCase()
+                      ) : (
+                        <User className="w-4 h-4" />
+                      )}
+                    </AvatarFallback>
+                  </Avatar>
+                  <ChevronDown className="w-4 h-4 text-gray-600" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-48" align="end">
+                  <DropdownMenuItem onClick={handleProfileClick}>
+                    Profile
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={handleLogout}
+                    disabled={isLoggingOut}
+                  >
+                    {isLoggingOut ? 'Logging out...' : 'Logout'}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               <p
                 className="font-mplus text-sm lg:text-base font-bold cursor-pointer"
                 onClick={() => setIsMenuOpen(true)}
@@ -96,13 +105,13 @@ const Navbar = () => {
             </div>
           ) : (
             <>
-              <button 
-            onClick={() => setIsLoginOpen(true)}
-            className="flex items-center gap-1"
-          >
-            <User className="w-6 h-6 lg:w-8 lg:h-8 text-gray-600" />
-            <span className="sr-only">Login</span>
-          </button>
+              <button
+                onClick={() => setIsLoginOpen(true)}
+                className="flex items-center gap-1"
+              >
+                <User className="w-6 h-6 lg:w-8 lg:h-8 text-gray-600" />
+                <span className="sr-only">Login</span>
+              </button>
               <p
                 className="font-mplus text-sm lg:text-base font-bold cursor-pointer"
                 onClick={() => setIsMenuOpen(true)}
@@ -121,7 +130,7 @@ const Navbar = () => {
         <p className="font-marcellus text-xs text-center">Based on India</p>
       </div>
 
-      <AuthModal isOpen={isLoginOpen} onClose={() => {setIsLoginOpen(false); refetch();}} />
+      <AuthModal isOpen={isLoginOpen} onClose={() => { setIsLoginOpen(false); refetch(); }} />
 
       <MenuModal
         isOpen={isMenuOpen}

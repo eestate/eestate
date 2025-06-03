@@ -1,25 +1,32 @@
-
 import jwt from 'jsonwebtoken';
+import asyncHandler from 'express-async-handler';
 import User from '../models/User.js';
 
-export const protect = async (req, res, next) => {
+const protect = asyncHandler(async (req, res, next) => {
+  console.log('Cookies:', req.cookies); // Debug cookies
+  const token = req.cookies.token; // Changed from req.cookies.jwt
+
+  if (!token) {
+    res.status(401);
+    throw new Error('Not authorized, token missing');
+  }
+
   try {
-    const token = req.cookies.jwt;
-
-    if (!token) {
-      return res.status(401).json({ message: 'Not authorized, token missing' });
-    }
-
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.id).select('-password');
+    console.log('Decoded JWT:', decoded); // Debug decoded token
+    req.user = await User.findById(decoded.id).select('-password'); // Changed userId to id
 
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+    if (!req.user) {
+      res.status(401);
+      throw new Error('Not authorized, user not found');
     }
 
-    req.user = user;
     next();
   } catch (error) {
-    return res.status(401).json({ message: 'Not authorized, token invalid' });
+    console.error('JWT verification error:', error.message);
+    res.status(401);
+    throw new Error('Not authorized, invalid token');
   }
-};
+});
+
+export { protect };

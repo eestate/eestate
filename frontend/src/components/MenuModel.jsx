@@ -1,6 +1,7 @@
 "use client"
 
 import { Dialog, DialogPanel } from "@headlessui/react"
+import { Link } from "react-router-dom"
 
 export default function MenuModal({ isOpen, onClose, onLoginClick }) {
   return (
@@ -18,10 +19,10 @@ export default function MenuModal({ isOpen, onClose, onLoginClick }) {
           <div className="flex flex-col lg:flex-row h-full">
             <div className="flex-1 flex flex-col justify-center space-y-8 lg:space-y-12">
               <div className="space-y-6 lg:space-y-8">
-                <h1 className="text-4xl lg:text-8xl font-bold leading-none">HOME</h1>
-                <h1 className="text-4xl lg:text-8xl font-bold leading-none">PROPERTY</h1>
-                <h1 className="text-4xl lg:text-8xl font-bold leading-none">AGENTS</h1>
-                <h1 className="text-4xl lg:text-8xl font-bold leading-none">ABOUT</h1>
+                <Link to="/"><h1 className="text-4xl lg:text-8xl font-bold leading-none">HOME</h1></Link>
+                <Link to="/properties"><h1 className="text-4xl lg:text-8xl font-bold leading-none">PROPERTY</h1></Link>
+                <Link to="/agents"><h1 className="text-4xl lg:text-8xl font-bold leading-none">AGENTS</h1></Link>
+                <Link to="/about"><h1 className="text-4xl lg:text-8xl font-bold leading-none">ABOUT</h1></Link>
               </div>
 
               <div className="mt-8 lg:mt-16">

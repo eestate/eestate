@@ -58,7 +58,15 @@ export const register = async (req, res, next) => {
     const user = await User.create({ name, email, password: hashedPassword, role });
 
     const token = generateToken(res, user._id);
-    res.status(201).json({ token, user });
+    res.status(201).json({ 
+      message: 'Registration successful',
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      }
+    });
   } catch (error) {
     next(error);
   }
@@ -78,10 +86,12 @@ export const login = async (req, res, next) => {
     if (!user.password) {
       return res.status(400).json({ message: 'This account uses Google login. Please use Google to sign in.' });
     }
+
     // const isMatch = await user.matchPassword(password);
     // if (!isMatch) {
-    //   return res.status(400).json({ message: 'Invalid email or passwordsss' }); 
+    //   return res.status(400).json({ message: 'Invalid email or password' }); 
     // }
+
     const token = generateToken(res, user._id);
     res.status(200).json({ token, user });
   } catch (error) {
@@ -123,33 +133,45 @@ export const updateProfile = async (req, res, next) => {
 
 // authController.js
 export const checkAuth = async (req, res) => {
+
+  console.log('Check auth headers:', req.headers);
+    console.log('Check auth cookies:', req.cookies)
+
   try {
     if (!req.user) {
       return res.status(401).json({ isAuthenticated: false });
     }
     
+    console.log('User authenticated:', req.user._id);
+
     res.status(200).json({
       isAuthenticated: true,
       user: req.user
     });
   } catch (error) {
+     console.error('Check auth error:', error);
     res.status(500).json({ error: error.message });
   }
 };
 
 
+
 export const logout = async (req, res) => {
   try {
-    res.clearCookie('token', '', {
+    res.cookie('token', '', {
       httpOnly: true,
       expires: new Date(0),
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict'
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      path: '/',
+      domain: 'localhost'
     });
 
-    res.status(200).json({ message: 'Logged out successfully' });
+    console.log('Cookies after clear:', res.getHeaders()['set-cookie']);
+
+    res.status(200).json({ success: true, message: 'Logged out successfully' });
   } catch (error) {
     console.error('Logout error:', error);
-    res.status(500).json({ message: 'Logout failed' });
+    res.status(500).json({ success: false, message: 'Logout failed' });
   }
 };

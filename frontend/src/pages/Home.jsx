@@ -1,49 +1,104 @@
-import video from '../assets/video.mp4'
+import { useForm, Controller } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import video from '../assets/video.mp4';
+import { Search } from 'lucide-react';
 
-
+const searchSchema = z.object({
+  propertyType: z.string().nonempty('Please select a property type'),
+  location: z.string().min(1, 'Please enter a district or town'),
+});
 
 const Home = () => {
+  const { control, handleSubmit, formState: { errors } } = useForm({
+    resolver: zodResolver(searchSchema),
+    defaultValues: {
+      propertyType: '',
+      location: '',
+    },
+  });
+
+  const onSubmit = (data) => {
+    console.log('Search submitted:', data);
+  };
+
   return (
-    <div className="min-h-screen">
-      {/* Hero Video Section */}
-      <div className="relative h-[60vh] w-[1200px] lg:h-[70vh] bg-black flex items-center justify-center m-auto rounded-xl">
-        {/* Video placeholder - you can replace this with your video */}
-        <div className="absolute inset-0 ">
+    <div className="min-h-screen mt-8">
+      <div className="relative h-[60vh] w-[1250px] lg:h-[70vh] bg-black flex items-center justify-center m-auto rounded-xl">
+        <div className="absolute inset-0">
           <div className="w-full h-full flex items-center justify-center text-white">
             <p className="text-lg opacity-50">
               <video
-        src={video}
-        autoPlay
-        loop
-        muted
-        className="absolute top-1/2 left-1/2 w-full h-full object-cover z-0 rounded-[10px]"
-        style={{
-          transform: 'translate(-50%, -50%)'
-        }}
-      />
+                src={video}
+                autoPlay
+                loop
+                muted
+                className="absolute top-1/2 left-1/2 w-full h-full object-cover z-0 rounded-[10px]"
+                style={{
+                  transform: 'translate(-50%, -50%)'
+                }}
+              />
             </p>
           </div>
         </div>
 
         {/* Search Bar Overlay */}
         <div className="relative z-10 w-full max-w-2xl mx-4 md:ml">
-          <div className="bg-white rounded-lg p- flex flex-col lg:flex-row gap-2 shadow-lg">
-            <select className="flex p-2 border-0 outline-none text-gray-700">
-              <option>Property Type</option>
-              <option>Residential</option>
-              <option>Commercial</option>
-              <option>Industrial</option>
-            </select>
+  <form onSubmit={handleSubmit(onSubmit)} className="bg-white rounded-lg p-1 flex flex-col lg:flex-row gap-2 shadow-lg">
+    {/* Property Type Dropdown with Vertical Line */}
+    <div className="flex items-center relative">
+      <Controller
+        name="propertyType"
+        control={control}
+        render={({ field }) => (
+          <select
+            {...field}
+            className="flex p-2 border-0 outline-none text-gray-700"
+          >
+            <option value="">Property Type</option>
+            <option value="Residential">Residential</option>
+            <option value="Commercial">Commercial</option>
+            <option value="Industrial">Industrial</option>
+          </select>
+        )}
+      />
+      {errors.propertyType && (
+        <p className="text-red-500 text-sm mt-1">{errors.propertyType.message}</p>
+      )}
+      {/* Vertical Line */}
+      <div className="h-8 w-px bg-gray-300 mx-2 hidden lg:block"></div>
+    </div>
+
+    {/* Location Input with Search Icon */}
+    <div className="flex-1 relative">
+      <Controller
+        name="location"
+        control={control}
+        render={({ field }) => (
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-blue-500" />
             <input
+              {...field}
               type="text"
               placeholder="Please enter any district or town here"
-              className="flex-1 p-3 border-0 outline-none text-gray-700"
+              className="flex-1 p-3 pl-10 border-0 outline-none text-gray-700 w-full"
             />
-            <button className="bg-blue-600 text-white px-6 py-3 rounded hover:bg-blue-700 transition-colors">
-              Search
-            </button>
           </div>
-        </div>
+        )}
+      />
+      {errors.location && (
+        <p className="text-red-500 text-sm mt-1">{errors.location.message}</p>
+      )}
+    </div>
+
+    <button
+      type="submit"
+      className="bg-blue-500 text-white px-6 py-3 rounded hover:bg-blue-700 transition-colors"
+    >
+      Search
+    </button>
+  </form>
+</div>
       </div>
 
       {/* Property Categories Section */}
@@ -151,45 +206,8 @@ const Home = () => {
           </div>
         </div>
       </div>
-
-      {/* Footer */}
-      <footer className="bg-black text-white py-12 px-4 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 mb-8">
-            <div>
-              <h3 className="font-semibold mb-4">Home</h3>
-              <h3 className="font-semibold mb-4">About</h3>
-              <h3 className="font-semibold mb-4">Property</h3>
-              <h3 className="font-semibold mb-4">Contact us</h3>
-            </div>
-            <div>
-              <h3 className="font-semibold mb-4">Terms & Conditions</h3>
-              <h3 className="font-semibold mb-4">Privacy Policy</h3>
-              <h3 className="font-semibold mb-4">Help Center</h3>
-            </div>
-            <div className="lg:col-span-2 flex justify-end items-center">
-              <div className="flex space-x-4 mb-4">
-                <div className="w-8 h-8 bg-white rounded flex items-center justify-center">
-                  <span className="text-black text-sm">f</span>
-                </div>
-                <div className="w-8 h-8 bg-white rounded flex items-center justify-center">
-                  <span className="text-black text-sm">ig</span>
-                </div>
-                <div className="w-8 h-8 bg-white rounded flex items-center justify-center">
-                  <span className="text-black text-sm">x</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex flex-col lg:flex-row justify-between items-center pt-8 border-t border-gray-800">
-            <h2 className="text-4xl lg:text-6xl font-light mb-4 lg:mb-0">eestate</h2>
-            <p className="text-gray-400 text-sm">© 2025 eestate. All rights reserved</p>
-          </div>
-        </div>
-      </footer>
     </div>
-  )
-}
+  );
+};
 
-export default Home
+export default Home;

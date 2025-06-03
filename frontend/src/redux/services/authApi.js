@@ -58,7 +58,7 @@ export const authApi = createApi({
                 url: 'profile',
                 method: 'PUT',
                 body: profileData,
-                credentials: 'include' 
+                credentials: 'include'
             }),
             invalidatesTags: ['Auth']
         })
