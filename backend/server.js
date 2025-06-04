@@ -39,11 +39,6 @@ app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/agent', agentRoutes);
 app.use('/api/property', PropertyRoutes);
-app.use(
-  '/api/subscription/webhook',
-  express.raw({ type: 'application/json' }),
-  subscriptionRoutes
-);
 app.use('/api', subscriptionRoutes);
 
 

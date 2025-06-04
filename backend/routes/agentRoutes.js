@@ -8,7 +8,7 @@ const router = express.Router();
 
 router.post('/', protect, upload.array('images', 5), createProperty); 
 router.get('/my', protect, getMyProperties); 
-router.put('/:id', protect, upload.array('images', 5), editProperty); 
-router.delete('/:id', protect, deleteProperty); 
+router.put('/:propertyId', protect, upload.array('images', 5), editProperty); 
+router.delete('/:propertyId', protect, deleteProperty); 
 
 export default router;

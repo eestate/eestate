@@ -212,11 +212,11 @@ const basePropertySchema = new mongoose.Schema({
     enum: ["rent", "sale"],
     required: [true, "Property type is required"],
   },
-  subCategory: {
-    type: String,
-    enum: ["apartment", "commercial", "residential", "industrial", "retail_shop"],
-    required: [true, "Sub-category is required"],
-  },
+//   subCategory: {
+//     type: String,
+//     enum: ["apartment", "commercial", "residential", "industrial", "retail_shop"],
+//     required: [true, "Sub-category is required"],
+//   },
   address: {
     type: String,
     required: [true, "Address is required"],
@@ -256,10 +256,8 @@ const basePropertySchema = new mongoose.Schema({
   },
 }, options);
 
-// Base model
 const Property = mongoose.model("Property", basePropertySchema);
 
-// Apartment schema
 const Apartment = Property.discriminator("apartment", new mongoose.Schema({
   floorNumber: Number,
   totalFloors: Number,
@@ -268,7 +266,6 @@ const Apartment = Property.discriminator("apartment", new mongoose.Schema({
   balcony: Boolean,
 }));
 
-// Villa schema
 const Villa = Property.discriminator("villa", new mongoose.Schema({
   plotArea: Number,
   garden: Boolean,
@@ -278,13 +275,11 @@ const Villa = Property.discriminator("villa", new mongoose.Schema({
   bathrooms: Number,
 }));
 
-// Plot schema
 const Plot = Property.discriminator("plot", new mongoose.Schema({
   plotType: { type: String, enum: ["residential", "commercial"] },
   boundaryWall: Boolean,
 }));
 
-// Hostel schema
 const Hostel = Property.discriminator("hostel", new mongoose.Schema({
   totalRooms: Number,
   sharedRooms: Boolean,

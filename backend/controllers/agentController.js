@@ -816,18 +816,15 @@
 import { Property, Apartment, Villa, Plot, Hostel } from "../models/Property.js";
 import cloudinary from "../config/cloudinary.js"; 
 
-// Add a new property
 export const createProperty = async (req, res) => {
   try {
     const { propertyType, ...propertyData } = req.body;
-    const files = req.files; // Multer stores uploaded files here
+    const files = req.files; 
 
-    // Validate required fields
     if (!propertyType || !["apartment", "villa", "plot", "hostel"].includes(propertyType)) {
       return res.status(400).json({ error: "Invalid or missing property type" });
     }
 
-    // Upload images to Cloudinary
     let imageUrls = [];
     if (files && files.length > 0) {
       const uploadPromises = files.map(file =>
@@ -840,14 +837,12 @@ export const createProperty = async (req, res) => {
       imageUrls = uploadResults.map(result => result.secure_url);
     }
 
-    // Prepare property data
     const propertyPayload = {
       ...propertyData,
       images: imageUrls,
-      listedBy: req.user._id, // Assuming user is authenticated and ID is available
+      listedBy: req.user._id, 
     };
 
-    // Create property based on type
     let newProperty;
     switch (propertyType) {
       case "apartment":
@@ -866,7 +861,6 @@ export const createProperty = async (req, res) => {
         return res.status(400).json({ error: "Invalid property type" });
     }
 
-    // Save property to database
     await newProperty.save();
 
     return res.status(201).json({
@@ -879,28 +873,23 @@ export const createProperty = async (req, res) => {
   }
 };
 
-// Edit a property
 export const editProperty = async (req, res) => {
   try {
     const { propertyId } = req.params;
     const { propertyType, ...updateData } = req.body;
     const files = req.files;
 
-    // Find property
     const property = await Property.findById(propertyId);
     if (!property) {
       return res.status(404).json({ error: "Property not found" });
     }
 
-    // Check if user is authorized to edit
     if (property.listedBy.toString() !== req.user._id.toString()) {
       return res.status(403).json({ error: "Unauthorized to edit this property" });
     }
 
-    // Handle image updates
     let imageUrls = property.images;
     if (files && files.length > 0) {
-      // Delete old images from Cloudinary (optional)
       if (imageUrls.length > 0) {
         const deletePromises = imageUrls.map(url => {
           const publicId = url.split("/").pop().split(".")[0];
@@ -909,7 +898,6 @@ export const editProperty = async (req, res) => {
         await Promise.all(deletePromises);
       }
 
-      // Upload new images
       const uploadPromises = files.map(file =>
         cloudinary.uploader.upload(file.path, {
           folder: "properties",
@@ -920,7 +908,6 @@ export const editProperty = async (req, res) => {
       imageUrls = uploadResults.map(result => result.secure_url);
     }
 
-    // Update property data
     const updatedProperty = await Property.findByIdAndUpdate(
       propertyId,
       { ...updateData, images: imageUrls },
@@ -937,23 +924,19 @@ export const editProperty = async (req, res) => {
   }
 };
 
-// Delete a property
 export const deleteProperty = async (req, res) => {
   try {
     const { propertyId } = req.params;
 
-    // Find property
     const property = await Property.findById(propertyId);
     if (!property) {
       return res.status(404).json({ error: "Property not found" });
     }
 
-    // Check if user is authorized to delete
     if (property.listedBy.toString() !== req.user._id.toString()) {
       return res.status(403).json({ error: "Unauthorized to delete this property" });
     }
 
-    // Delete images from Cloudinary
     if (property.images.length > 0) {
       const deletePromises = property.images.map(url => {
         const publicId = url.split("/").pop().split(".")[0];
@@ -962,7 +945,6 @@ export const deleteProperty = async (req, res) => {
       await Promise.all(deletePromises);
     }
 
-    // Delete property
     await Property.findByIdAndDelete(propertyId);
 
     return res.status(200).json({
