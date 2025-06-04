@@ -1,7 +1,6 @@
 
 
-
-import { Property } from '../models/Property.js';
+import Property from '../models/Property.js';
 import User from '../models/User.js';
 
 
