@@ -3,8 +3,7 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import video from '../assets/video.mp4';
 import { Search } from 'lucide-react';
-import { useGetPropertyImagesByCategoryQuery } from '@/redux/services/propertyApi';
-import { Link } from 'react-router-dom';
+import { assets } from '@/assets/assets';
 
 const searchSchema = z.object({
   propertyType: z.string().nonempty('Please select a property type'),
@@ -23,10 +22,6 @@ const Home = () => {
   const onSubmit = (data) => {
     console.log('Search submitted:', data);
   };
-
-    const { data: commercialImages } = useGetPropertyImagesByCategoryQuery('commercial');
-  const { data: shopImages } = useGetPropertyImagesByCategoryQuery('shop-showroom');
-  const { data: industrialImages } = useGetPropertyImagesByCategoryQuery('industrial');
 
   return (
     <div className="min-h-screen mt-8">
@@ -108,72 +103,96 @@ const Home = () => {
       </div>
 
       {/* Property Categories Section */}
-            <div className="py-12 lg:py-20 px-4 lg:px-8">
+      <div className="py-12 lg:py-20 px-4 lg:px-8">
         {/* Commercial Land Section */}
         <div className="max-w-7xl mx-auto mb-16 lg:mb-24">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-center">
-            <div className="lg:col-span-1">
-              <h2 className="text-2xl lg:text-3xl font-semibold mb-4">Commercial Land</h2>
-              <Link to="/properties?category=commercial" className="text-blue-600 hover:underline">
-                view all →
-              </Link>
-            </div>
-            <div className="lg:col-span-2 grid grid-cols-2 gap-4">
-              {commercialImages?.map((image, index) => (
-                <img
-                  key={index}
-                  src={image || '/placeholder.svg'}
-                  alt={`Commercial property ${index + 1}`}
-                  className="w-full h-48 object-cover rounded-lg"
-                />
-              ))}
-            </div>
-          </div>
-        </div>
+  <div className="grid grid-cols-1 lg:grid-cols-3 items-stretch gap-8">
+    
+    {/* Text Block - Custom vertical alignment */}
+    <div className="relative h-full border-r-2 border-gray-300 pr-6">
+      <div className="absolute top-1/4 left-0 right-0">
+        <h2 className="font-manrope text-2xl lg:text-3xl font-semibold mb-4">Industrial Building</h2>
+        <p className="font-biorhyme text-gray-600 mb-6">
+                Explore premium commercial land listings with expert guidance and support
+        </p>
+        <button className="text-gray-600 hover:underline">view all →</button>
+      </div>
+    </div>
+
+    {/* Image Grid */}
+    <div className="lg:col-span-2 grid grid-cols-2 gap-4 pl-6">
+      {assets.commercial.map((image, index) => (
+        <img
+          key={`building-${index}`}
+          src={image}
+          alt={`Building property ${index + 1}`}
+          className="w-full h-48 object-cover rounded-md shadow"
+        />
+      ))}
+    </div>
+  </div>
+</div>
 
         {/* Shop/Showroom Section */}
-        <div className="max-w-7xl mx-auto mb-16 lg:mb-24">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-center">
-            <div className="lg:col-span-2 grid grid-cols-2 gap-4 order-2 lg:order-1">
-              {shopImages?.map((image, index) => (
-                <img
-                  key={index}
-                  src={image || '/placeholder.svg'}
-                  alt={`Shop property ${index + 1}`}
-                  className="w-full h-48 object-cover rounded-lg"
-                />
-              ))}
-            </div>
-            <div className="lg:col-span-1 order-1 lg:order-2 text-right">
-              <h2 className="text-2xl lg:text-3xl font-semibold mb-4">Shop/Showroom</h2>
-              <Link to="/properties?category=retail_shop" className="text-blue-600 hover:underline">
-                view all →
-              </Link>
-            </div>
-          </div>
-        </div>
+<div className="max-w-7xl mx-auto mb-16 lg:mb-24">
+  <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
+
+    {/* Text Block (Right side on large screens) */}
+    <div className="relative order-1 lg:order-2 border-l-2 border-gray-300 pl-6 text-right">
+      <div className="absolute top-1/4 right-0 w-full pr-6">
+        <h2 className="font-manrope text-2xl lg:text-3xl font-semibold mb-4">Shop/Showroom</h2>
+        <p className="font-biorhyme text-gray-600 mb-6">
+          Discover top shop and showroom spaces with expert guidance and support
+        </p>
+        <button className="text-gray-600 hover:underline">view all →</button>
+      </div>
+    </div>
+
+    {/* Image Grid (Left side on large screens) */}
+    <div className="lg:col-span-2 grid grid-cols-2 gap-4 order-2 lg:order-1">
+      {assets.building.map((image, index) => (
+        <img 
+          key={`building-${index}`}
+          src={image} 
+          alt={`Building property ${index + 1}`}
+          className="w-full h-48 object-cover rounded-md"
+        />
+      ))}
+    </div>
+
+  </div>
+</div>
+
 
         {/* Industrial Building Section */}
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-center">
-            <div className="lg:col-span-1">
-              <h2 className="text-2xl lg:text-3xl font-semibold mb-4">Industrial Building</h2>
-              <Link to="/properties?category=industrial" className="text-blue-600 hover:underline">
-                view all →
-              </Link>
-            </div>
-            <div className="lg:col-span-2 grid grid-cols-2 gap-4">
-              {industrialImages?.map((image, index) => (
-                <img
-                  key={index}
-                  src={image || '/placeholder.svg'}
-                  alt={`Industrial property ${index + 1}`}
-                  className="w-full h-48 object-cover rounded-lg"
-                />
-              ))}
-            </div>
-          </div>
-        </div>
+        <div className="max-w-7xl mx-auto mb-16 lg:mb-24">
+  <div className="grid grid-cols-1 lg:grid-cols-3 items-stretch gap-8">
+    
+    {/* Text Block - Custom vertical alignment */}
+    <div className="relative h-full border-r-2 border-gray-300 pr-6">
+      <div className="absolute top-1/4 left-0 right-0">
+        <h2 className="font-manrope text-2xl lg:text-3xl font-semibold mb-4">Industrial Building</h2>
+        <p className="font-biorhyme text-gray-600 mb-6">
+          Find the ideal industrial space tailored to your business needs
+        </p>
+        <button className="text-gray-600 hover:underline">view all →</button>
+      </div>
+    </div>
+
+    {/* Image Grid */}
+    <div className="lg:col-span-2 grid grid-cols-2 gap-4 pl-6">
+      {assets.office.map((image, index) => (
+        <img
+          key={`building-${index}`}
+          src={image}
+          alt={`Building property ${index + 1}`}
+          className="w-full h-48 object-cover rounded-md shadow"
+        />
+      ))}
+    </div>
+  </div>
+</div>
+
       </div>
     </div>
   );

@@ -23,7 +23,7 @@ const App = () => {
         <Route path="/property/:id" element={<PropertyDetail />} />
         <Route path='/agent' element={<AgentNavbar/>}/>
       </Routes>
-      {/* <Footer/> */}
+      <Footer/>
     </div>
   )
 }
