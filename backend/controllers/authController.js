@@ -6,30 +6,43 @@ import bcrypt from 'bcrypt'
 
 const client= new OAuth2Client(process.env.GOOGLE_CLIENT_ID)
 
-export const  googleLogin= async (req,res,next)=>{
-try{
-    const {credential}=req.body
-
-     const ticket = await client.verifyIdToken({
-      idToken: credential, 
+export const googleLogin = async (req, res, next) => {
+  try {
+    const { credential } = req.body;
+    
+    // Verify Google token
+    const ticket = await client.verifyIdToken({
+      idToken: credential,
       audience: process.env.GOOGLE_CLIENT_ID,
     });
 
-     const payload=ticket.getPayload();
-    const {email,name,sub:googleId,picture}=payload;
+    const payload = ticket.getPayload();
+    const { email, name, sub: googleId, picture } = payload;
+
+    // Check if user exists
     let user = await User.findOne({ email });
-if (!user) {
+
+    if (!user) {
+      // Create new user if doesn't exist
       user = await User.create({
         name,
         email,
         googleId,
         profilePic: picture,
         role: 'user',
+        isVerified: true, // Google verified emails
       });
+    } else if (!user.googleId) {
+      // Update existing user with Google ID if logging in for first time
+      user.googleId = googleId;
+      user.profilePic = picture;
+      await user.save();
     }
 
-        const token = generateToken(res,user._id);
-res.status(200).json({
+    // Generate JWT token
+    const token = generateToken(res, user._id);
+
+    res.status(200).json({
       message: 'Google login successful',
       token,
       user: {
@@ -39,13 +52,12 @@ res.status(200).json({
         role: user.role,
         profilePic: user.profilePic,
       },
-    })
+    });
     
-}
-catch(error){
-    next(error)
-}
-}
+  } catch (error) {
+    next(error);
+  }
+};
 
 export const register = async (req, res, next) => {
   try {
