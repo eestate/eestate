@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 // import profile from '../assets/image.png'
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import profile from '../assets/image.png'
 import AuthModal from "../pages/AuthModal";
 import MenuModal from "./MenuModel";

@@ -1,6 +1,7 @@
 
 
-import Property from '../models/Property.js';
+
+import { Property } from '../models/Property.js';
 import User from '../models/User.js';
 
 
@@ -141,20 +142,12 @@ export const removeFromWishlist = async (req, res, next) => {
   }
 };
 
-// controllers/propertyController.js (add these new functions)
 
-export const getPropertiesByCategory = async (req, res, next) => {
+export const getPropertyImagesByCategory = async (req, res, next) => {
   try {
     const { category } = req.params;
     const { limit = 4 } = req.query;
 
-    // Validate category
-    const validCategories = ['commercial', 'shop-showroom', 'industrial'];
-    if (!validCategories.includes(category)) {
-      return res.status(400).json({ message: 'Invalid category' });
-    }
-
-    // Map frontend categories to database subCategories
     const categoryMap = {
       'commercial': 'commercial',
       'shop-showroom': 'retail_shop',
@@ -163,13 +156,16 @@ export const getPropertiesByCategory = async (req, res, next) => {
 
     const properties = await Property.find({
       subCategory: categoryMap[category],
-      isActive: true
+      isActive: true,
+      images: { $exists: true, $not: { $size: 0 } }
     })
     .limit(Number(limit))
     .sort({ createdAt: -1 })
-    .select('name price images location');
+    .select('images'); 
 
-    res.status(200).json(properties);
+    const images = properties.flatMap(property => property.images.slice(0, 1)); 
+
+    res.status(200).json(images);
   } catch (error) {
     next(error);
   }
