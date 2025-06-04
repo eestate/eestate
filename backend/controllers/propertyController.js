@@ -1,6 +1,7 @@
 
 
-import Property from '../models/Property.js';
+
+import { Property } from '../models/Property.js';
 import User from '../models/User.js';
 
 
@@ -136,6 +137,53 @@ export const removeFromWishlist = async (req, res, next) => {
     user.wishlist = user.wishlist.filter(id => id.toString() !== propertyId);
     await user.save();
     res.status(200).json({ success: true });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// controllers/propertyController.js (add these new functions)
+
+export const getPropertiesByCategory = async (req, res, next) => {
+  try {
+    const { category } = req.params;
+    const { limit = 4 } = req.query;
+
+    // Validate category
+    const validCategories = ['commercial', 'shop-showroom', 'industrial'];
+    if (!validCategories.includes(category)) {
+      return res.status(400).json({ message: 'Invalid category' });
+    }
+
+    // Map frontend categories to database subCategories
+    const categoryMap = {
+      'commercial': 'commercial',
+      'shop-showroom': 'retail_shop',
+      'industrial': 'industrial'
+    };
+
+    const properties = await Property.find({
+      subCategory: categoryMap[category],
+      isActive: true
+    })
+    .limit(Number(limit))
+    .sort({ createdAt: -1 })
+    .select('name price images location');
+
+    res.status(200).json(properties);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getFeaturedProperties = async (req, res, next) => {
+  try {
+    const properties = await Property.find({ isActive: true })
+      .sort({ views: -1 })
+      .limit(8)
+      .select('name price images location subCategory');
+
+    res.status(200).json(properties);
   } catch (error) {
     next(error);
   }
