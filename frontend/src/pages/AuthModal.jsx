@@ -46,7 +46,7 @@ export default function AuthModal({ isOpen, onClose }) {
   const { isAuthenticated } = useAuth()
   const navigate = useNavigate()
 
-  const { refetchAuth } = useAuth();
+  const { refetch } = useAuth();
 
   const loginForm = useForm({
     resolver: zodResolver(loginSchema),
@@ -71,11 +71,11 @@ export default function AuthModal({ isOpen, onClose }) {
   useEffect(() => {
     const checkAuthStatus = async () => {
       if (isOpen) {
-        await refetchAuth();
+        await refetch();
       }
     };
     checkAuthStatus();
-  }, [isOpen, refetchAuth]);
+  }, [isOpen, refetch]);
 
   useEffect(() => {
     if (isAuthenticated && isOpen && currentStep === "login") {
@@ -118,7 +118,7 @@ export default function AuthModal({ isOpen, onClose }) {
     try {
       const response = await login(data).unwrap()
       localStorage.setItem('user', JSON.stringify(response.user))
-      await refetchAuth();
+      await refetch();
 
       if (response.user) {
         toast.success("Login successful!");

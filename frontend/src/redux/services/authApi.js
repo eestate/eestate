@@ -21,8 +21,8 @@ export const authApi = createApi({
             transformResponse: (response) => {
                 if (response.user) {
                     localStorage.setItem('user', JSON.stringify(response.user));
+                    return response;
                 }
-                return response;
             }
         }),
         register: builder.mutation({
@@ -32,23 +32,22 @@ export const authApi = createApi({
                 body: userData
             })
         }),
-        logout: builder.mutation({
-            query: () => ({
-                url: 'logout',
-                method: 'POST',
-                credentials: 'include'
-            }),
-            async onQueryStarted(arg, { dispatch, queryFulfilled }) {
-                try {
-                    await queryFulfilled;
-                    dispatch(api.util.resetApiState());
-                    localStorage.removeItem('user');
-                } catch (error) {
-                    console.error('Logout failed:', error);
-                }
-            },
-            invalidatesTags: ['Auth']
-        }),
+    logout: builder.mutation({
+      query: () => ({
+        url: 'logout',
+        method: 'POST',
+        credentials: 'include'
+      }),
+      async onQueryStarted(arg, { dispatch, queryFulfilled }) {
+        try {
+          await queryFulfilled;
+          localStorage.removeItem('user');
+        } catch (error) {
+          console.error('Logout failed:', error);
+        }
+      },
+      invalidatesTags: ['Auth']
+    }),
         checkAuth: builder.query({
             query: () => 'check',
             providesTags: ['Auth']

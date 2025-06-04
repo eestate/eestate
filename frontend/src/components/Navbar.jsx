@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import profile from '../assets/image.png'
 import AuthModal from "../pages/AuthModal";
 import MenuModal from "./MenuModel";
@@ -19,17 +19,17 @@ import { toast } from "sonner"
 const Navbar = () => {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { user, isAuthenticated, isLoading, logout, isLoggingOut } = useAuth();
+  const { user, isAuthenticated, isLoading, logout, isLoggingOut, refetch } = useAuth();
   const navigate = useNavigate();
 
+  useEffect(() => {
+    refetch()
+  }, [refetch])
+
   const handleLogout = async () => {
-    const success = await logout();
-    if (success) {
-      toast.success('Logged out successfully');
-    } else {
-      toast.error('Logout failed. Please try again.');
-    }
-  };
+    await logout();
+    window.location.href = '/'; // Simple page reload
+  }
 
   const handleProfileClick = () => {
     if (isAuthenticated) {
