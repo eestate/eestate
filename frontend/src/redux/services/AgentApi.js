@@ -4,8 +4,8 @@ export const agentApi = createApi({
   reducerPath: 'agentApi',
   baseQuery: fetchBaseQuery({
     baseUrl: 'http://localhost:3003/api/agent',
-    credentials: 'include', // Ensure cookies are sent
-    prepareHeaders: (headers, { getState }) => {
+    credentials: 'include',
+    prepareHeaders: (headers) => {
       console.log('Sending agent request with cookies:', document.cookie);
       return headers;
     },
@@ -23,16 +23,16 @@ export const agentApi = createApi({
     createProperty: builder.mutation({
       query: ({ propertyData, images }) => {
         const formData = new FormData();
-        // Append property data
         Object.entries(propertyData).forEach(([key, value]) => {
-          if (key === 'coordinates') {
-            formData.append(key, JSON.stringify(value));
-          } else {
-            formData.append(key, value);
+          if (value !== undefined && value !== null) {
+            if (key === 'coordinates' || key === 'features') {
+              formData.append(key, JSON.stringify(value));
+            } else {
+              formData.append(key, value);
+            }
           }
         });
-        // Append images
-        images.forEach((image, index) => {
+        images.forEach((image) => {
           formData.append('images', image);
         });
         return {
@@ -46,16 +46,16 @@ export const agentApi = createApi({
     editProperty: builder.mutation({
       query: ({ id, propertyData, images }) => {
         const formData = new FormData();
-        // Append property data
         Object.entries(propertyData).forEach(([key, value]) => {
-          if (key === 'coordinates' && value) {
-            formData.append(key, JSON.stringify(value));
-          } else if (value !== undefined) {
-            formData.append(key, value);
+          if (value !== undefined && value !== null) {
+            if (key === 'coordinates' || key === 'features') {
+              formData.append(key, JSON.stringify(value));
+            } else {
+              formData.append(key, value);
+            }
           }
         });
-        // Append images
-        images.forEach((image, index) => {
+        images.forEach((image) => {
           formData.append('images', image);
         });
         return {
@@ -67,12 +67,23 @@ export const agentApi = createApi({
       invalidatesTags: ['Properties', 'AgentStats'],
     }),
     deleteProperty: builder.mutation({
-      query: (id) => ({
-        url: `/${id}`,
-        method: 'DELETE',
+        query: (id) => {
+          console.log(`Sending DELETE request for property ID: ${id}`);
+          return {
+            url: `/${id}`,
+            method: 'DELETE',
+          };
+        },
+        async onQueryStarted(id, { dispatch, queryFulfilled }) {
+          try {
+            await queryFulfilled;
+            dispatch(agentApi.util.invalidateTags(['Properties']));
+          } catch (error) {
+            console.error('Delete failed:', error);
+          }
+        },
+        invalidatesTags: ['Properties', 'AgentStats'],
       }),
-      invalidatesTags: ['Properties', 'AgentStats'],
-    }),
   }),
 });
 

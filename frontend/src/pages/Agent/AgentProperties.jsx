@@ -1,19 +1,20 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Plus, X, Bed, Bath, Home } from 'lucide-react';
-import { useGetMyPropertiesQuery,useCreatePropertyMutation,useEditPropertyMutation,useDeletePropertyMutation } from '@/redux/services/AgentApi';
+import { useGetMyPropertiesQuery, useCreatePropertyMutation, useEditPropertyMutation, useDeletePropertyMutation } from '@/redux/services/AgentApi';
 import { useCheckAuthQuery } from '@/redux/services/authApi';
 
 const AgentProperties = () => {
   const { data: authData, isLoading: authLoading } = useCheckAuthQuery();
-  const { data: properties, isLoading: propertiesLoading, error } = useGetMyPropertiesQuery(undefined, {
+  const { data: properties, isLoading: propertiesLoading, error: propertiesError } = useGetMyPropertiesQuery(undefined, {
     skip: !authData || authData.user?.role !== 'agent',
   });
-  const [createProperty] = useCreatePropertyMutation();
-  const [editProperty] = useEditPropertyMutation();
-  const [deleteProperty] = useDeletePropertyMutation();
+  const [createProperty, { isLoading: createLoading, error: createError, isSuccess: createSuccess }] = useCreatePropertyMutation();
+  const [editProperty, { isLoading: editLoading, error: editError, isSuccess: editSuccess }] = useEditPropertyMutation();
+  const [deleteProperty, { isLoading: deleteLoading, error: deleteError }] = useDeletePropertyMutation();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState(null);
   const [activeFilter, setActiveFilter] = useState('available');
   const [formData, setFormData] = useState({
@@ -26,35 +27,49 @@ const AgentProperties = () => {
     features: '',
     type: 'sale',
     subCategory: 'apartment',
-    coordinates: { lat: 0, lng: 0 }, // Default coordinates
-    // Apartment specific
+    coordinates: { lat: 0, lng: 0 },
     bedrooms: '',
     bathrooms: '',
     floorNumber: '',
     totalFloors: '',
     balcony: false,
-    // Villa specific
     plotArea: '',
     garden: false,
     swimmingPool: false,
     garage: false,
-    // Plot specific
     plotType: 'residential',
     boundaryWall: false,
-    // Hostel specific
     totalRooms: '',
     sharedRooms: false,
     foodIncluded: false,
   });
   const [images, setImages] = useState([]);
+  const [formError, setFormError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    if (createSuccess || editSuccess) {
+      setSuccessMessage(`Property ${selectedProperty ? 'updated' : 'added'} successfully!`);
+      resetFormData();
+      setIsModalOpen(false);
+      setSelectedProperty(null);
+      setTimeout(() => setSuccessMessage(''), 3000);
+    }
+  }, [createSuccess, editSuccess]);
+
+  useEffect(() => {
+    if (createError || editError) {
+      setFormError((createError || editError)?.data?.error || 'An error occurred. Please try again.');
+    }
+  }, [createError, editError]);
 
   if (authLoading || propertiesLoading) {
     return <div className="p-6 bg-gray-50">Loading...</div>;
   }
 
-  if (error || !authData || authData.user?.role !== 'agent') {
-    return <div className="p-6 bg-gray-50">Unauthorized or error fetching data</div>;
+  if (propertiesError || !authData || authData.user?.role !== 'agent') {
+    return <div className="p-6 bg-gray-50">Unauthorized or error fetching data: {propertiesError?.data?.message}</div>;
   }
 
   const handlePropertyClick = (property) => {
@@ -67,7 +82,7 @@ const AgentProperties = () => {
       name: selectedProperty.name || '',
       propertyType: selectedProperty.propertyType || 'apartment',
       address: selectedProperty.address || '',
-      price: selectedProperty.price || '',
+      price: selectedProperty.price ? `$${selectedProperty.price.toLocaleString()}` : '',
       sqft: selectedProperty.sqft || '',
       description: selectedProperty.description || '',
       features: selectedProperty.features?.join(', ') || '',
@@ -89,18 +104,27 @@ const AgentProperties = () => {
       sharedRooms: selectedProperty.sharedRooms || false,
       foodIncluded: selectedProperty.foodIncluded || false,
     });
-    setImages([]); // Reset images
+    setImages([]);
     setIsDetailsModalOpen(false);
     setIsModalOpen(true);
   };
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
+    setIsDeleteConfirmOpen(true);
+  };
+
+  const confirmDelete = async () => {
     try {
+      console.log(`Deleting property with ID: ${selectedProperty._id}`);
       await deleteProperty(selectedProperty._id).unwrap();
       setIsDetailsModalOpen(false);
+      setIsDeleteConfirmOpen(false);
       setSelectedProperty(null);
+      setSuccessMessage('Property deleted successfully!');
+      setTimeout(() => setSuccessMessage(''), 3000);
     } catch (err) {
-      console.error('Delete failed:', err);
+      console.error('Delete error:', err);
+      setFormError(err?.data?.error || 'Failed to delete property.');
     }
   };
 
@@ -113,6 +137,7 @@ const AgentProperties = () => {
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
+    setFormError('');
     if (name === 'lat' || name === 'lng') {
       setFormData(prev => ({
         ...prev,
@@ -127,7 +152,7 @@ const AgentProperties = () => {
   };
 
   const handleImageChange = (e) => {
-    const files = Array.from(e.target.files);
+    const files = Array.from(e.target.files).slice(0, 5); // Limit to 5 images
     setImages(files);
   };
 
@@ -162,37 +187,48 @@ const AgentProperties = () => {
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
+    setFormError('');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setFormError('');
+
+    // Validate price
+    const priceValue = parseFloat(formData.price.replace(/[^0-9.]/g, ''));
+    if (isNaN(priceValue) || priceValue <= 0) {
+      setFormError('Please enter a valid price.');
+      return;
+    }
+
+    // Validate required fields
+    if (!formData.name || !formData.address || !formData.sqft) {
+      setFormError('Please fill in all required fields.');
+      return;
+    }
 
     const propertyData = {
       propertyType: formData.propertyType,
       name: formData.name,
-      description: formData.description,
-      price: parseFloat(formData.price.replace(/[^0-9.]/g, '')) || 0,
+      description: formData.description || undefined,
+      price: priceValue,
       type: formData.type,
-      subCategory: formData.subCategory,
+      subCategory: formData.propertyType === 'plot' ? formData.plotType : formData.propertyType,
       address: formData.address,
       coordinates: formData.coordinates,
-      features: formData.features ? formData.features.split(',').map(f => f.trim()) : [],
+      features: formData.features ? formData.features.split(',').map(f => f.trim()).filter(f => f) : [],
       sqft: parseInt(formData.sqft) || 0,
-      // Apartment specific
       bedrooms: parseInt(formData.bedrooms) || undefined,
       bathrooms: parseInt(formData.bathrooms) || undefined,
       floorNumber: parseInt(formData.floorNumber) || undefined,
       totalFloors: parseInt(formData.totalFloors) || undefined,
       balcony: formData.balcony,
-      // Villa specific
       plotArea: parseInt(formData.plotArea) || undefined,
       garden: formData.garden,
       swimmingPool: formData.swimmingPool,
       garage: formData.garage,
-      // Plot specific
       plotType: formData.plotType,
       boundaryWall: formData.boundaryWall,
-      // Hostel specific
       totalRooms: parseInt(formData.totalRooms) || undefined,
       sharedRooms: formData.sharedRooms,
       foodIncluded: formData.foodIncluded,
@@ -200,17 +236,12 @@ const AgentProperties = () => {
 
     try {
       if (selectedProperty) {
-        // Edit existing property
         await editProperty({ id: selectedProperty._id, propertyData, images }).unwrap();
       } else {
-        // Create new property
         await createProperty({ propertyData, images }).unwrap();
       }
-      resetFormData();
-      setIsModalOpen(false);
-      setSelectedProperty(null);
     } catch (err) {
-      console.error('Submit failed:', err);
+      setFormError(err?.data?.error || 'An error occurred. Please try again.');
     }
   };
 
@@ -285,7 +316,6 @@ const AgentProperties = () => {
             </div>
           </>
         );
-
       case 'villa':
         return (
           <>
@@ -358,7 +388,6 @@ const AgentProperties = () => {
             </div>
           </>
         );
-
       case 'plot':
         return (
           <>
@@ -386,7 +415,6 @@ const AgentProperties = () => {
             </div>
           </>
         );
-
       case 'hostel':
         return (
           <>
@@ -425,7 +453,6 @@ const AgentProperties = () => {
             </div>
           </>
         );
-
       default:
         return null;
     }
@@ -433,15 +460,25 @@ const AgentProperties = () => {
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
+      {/* Success/Error Messages */}
+      {successMessage && (
+        <div className="mb-4 p-4 bg-green-100 text-green-800 rounded-md">
+          {successMessage}
+        </div>
+      )}
+      {formError && (
+        <div className="mb-4 p-4 bg-red-100 text-red-800 rounded-md">
+          {formError}
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-4">
           <button
             onClick={() => setActiveFilter('available')}
             className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-              activeFilter === 'available'
-                ? 'bg-black text-white'
-                : 'bg-white text-gray-600 hover:bg-gray-100'
+              activeFilter === 'available' ? 'bg-black text-white' : 'bg-white text-gray-600 hover:bg-gray-100'
             }`}
           >
             Available
@@ -449,15 +486,12 @@ const AgentProperties = () => {
           <button
             onClick={() => setActiveFilter('sold')}
             className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-              activeFilter === 'sold'
-                ? 'bg-black text-white'
-                : 'bg-white text-gray-600 hover:bg-gray-100'
+              activeFilter === 'sold' ? 'bg-black text-white' : 'bg-white text-gray-600 hover:bg-gray-100'
             }`}
           >
             Sold
           </button>
         </div>
-        
         <button
           onClick={() => setIsModalOpen(true)}
           className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors flex items-center space-x-2"
@@ -470,8 +504,8 @@ const AgentProperties = () => {
       {/* Properties Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredProperties.map((property) => (
-          <div 
-            key={property._id} 
+          <div
+            key={property._id}
             className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer"
             onClick={() => handlePropertyClick(property)}
           >
@@ -482,20 +516,18 @@ const AgentProperties = () => {
                 className="w-full h-48 object-cover"
               />
               <div className="absolute top-3 right-3">
-                <span className={`px-2 py-1 rounded text-xs font-medium ${
-                  property.status === 'available' 
-                    ? 'bg-green-100 text-green-800' 
-                    : 'bg-gray-100 text-gray-800'
-                }`}>
+                <span
+                  className={`px-2 py-1 rounded text-xs font-medium ${
+                    property.status === 'available' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                  }`}
+                >
                   {property.status.charAt(0).toUpperCase() + property.status.slice(1)}
                 </span>
               </div>
             </div>
-            
             <div className="p-4">
               <h3 className="font-semibold text-gray-900 mb-2">{property.name}</h3>
               <p className="text-2xl font-bold text-gray-900 mb-3">${property.price.toLocaleString()}</p>
-              
               <div className="flex items-center space-x-4 text-sm text-gray-600">
                 {property.bedrooms && (
                   <div className="flex items-center space-x-1">
@@ -521,7 +553,7 @@ const AgentProperties = () => {
 
       {/* Property Details Modal */}
       {isDetailsModalOpen && selectedProperty && (
-        <div className="fixed inset-0 bg-white bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-white bg-opacity-100 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl w-full max-w-sm mx-auto max-h-[90vh] overflow-y-auto">
             <div className="relative">
               <img
@@ -529,62 +561,60 @@ const AgentProperties = () => {
                 alt={selectedProperty.name}
                 className="w-full h-64 object-cover rounded-t-2xl"
               />
-              <button 
+              <button
                 onClick={closeDetailsModal}
                 className="absolute top-4 right-4 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-gray-50"
               >
                 <X className="w-5 h-5 text-gray-600" />
               </button>
               <div className="absolute bottom-4 right-4">
-                <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                  selectedProperty.status === 'available' 
-                    ? 'bg-green-500 text-white' 
-                    : 'bg-gray-500 text-white'
-                }`}>
-                  {selectedProperty.status === 'available' ? '✓ Available' : selectedProperty.status.charAt(0).toUpperCase() + selectedProperty.status.slice(1)}
+                <span
+                  className={`px-3 py-1 rounded-full text-sm font-medium ${
+                    selectedProperty.status === 'available' ? 'bg-green-500 text-white' : 'bg-gray-500 text-white'
+                  }`}
+                >
+                  {selectedProperty.status === 'available'
+                    ? '✓ Available'
+                    : selectedProperty.status.charAt(0).toUpperCase() + selectedProperty.status.slice(1)}
                 </span>
               </div>
             </div>
-
             <div className="p-6">
               <h2 className="text-xl font-semibold text-gray-900 mb-2">{selectedProperty.name}</h2>
-              
               <div className="space-y-3 mb-4">
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Location:</span>
                   <span className="text-sm font-medium">{selectedProperty.address}</span>
                 </div>
-                
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Price:</span>
                   <span className="text-lg font-bold text-gray-900">${selectedProperty.price.toLocaleString()}</span>
                 </div>
-                
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Property Type:</span>
-                  <span className="text-sm font-medium">{selectedProperty.subCategory.charAt(0).toUpperCase() + selectedProperty.subCategory.slice(1)}</span>
+                  <span className="text-sm font-medium">
+                    {selectedProperty.subCategory.charAt(0).toUpperCase() + selectedProperty.subCategory.slice(1)}
+                  </span>
                 </div>
-                
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Bedrooms/Bathrooms:</span>
                   <span className="text-sm font-medium">
-                    {selectedProperty.bedrooms ? `${selectedProperty.bedrooms}b` : 'N/A'} / {selectedProperty.bathrooms ? `${selectedProperty.bathrooms}b` : 'N/A'}
+                    {selectedProperty.bedrooms ? `${selectedProperty.bedrooms}b` : 'N/A'} /{' '}
+                    {selectedProperty.bathrooms ? `${selectedProperty.bathrooms}b` : 'N/A'}
                   </span>
                 </div>
-                
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Agent:</span>
                   <span className="text-sm font-medium">{authData.user.name || 'Agent'}</span>
                 </div>
-                
                 <hr className="my-4" />
-                
                 <div>
                   <span className="text-sm text-gray-600 block mb-2">Description:</span>
-                  <p className="text-sm text-gray-800 leading-relaxed">{selectedProperty.description || 'No description available.'}</p>
+                  <p className="text-sm text-gray-800 leading-relaxed">
+                    {selectedProperty.description || 'No description available.'}
+                  </p>
                 </div>
               </div>
-
               <div className="flex space-x-3">
                 <button
                   onClick={handleEdit}
@@ -604,9 +634,36 @@ const AgentProperties = () => {
         </div>
       )}
 
+      {/* Delete Confirmation Modal */}
+      {isDeleteConfirmOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 w-full max-w-sm mx-auto">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Confirm Deletion</h2>
+            <p className="text-sm text-gray-600 mb-6">
+              Are you sure you want to delete "{selectedProperty.name}"? This action cannot be undone.
+            </p>
+            <div className="flex space-x-3">
+              <button
+                onClick={() => setIsDeleteConfirmOpen(false)}
+                className="flex-1 bg-gray-300 text-gray-800 py-2 px-4 rounded-md hover:bg-gray-400 transition-colors text-sm font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                disabled={deleteLoading}
+                className="flex-1 bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 transition-colors text-sm font-medium disabled:opacity-50"
+              >
+                {deleteLoading ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Add/Edit Property Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-white bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold text-gray-900">{selectedProperty ? 'Edit Property' : 'Add Property'}</h2>
@@ -614,8 +671,10 @@ const AgentProperties = () => {
                 <X className="w-6 h-6" />
               </button>
             </div>
-
             <form onSubmit={handleSubmit} className="space-y-4">
+              {formError && (
+                <div className="p-3 bg-red-100 text-red-800 rounded-md text-sm">{formError}</div>
+              )}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Property Name</label>
                 <input
@@ -628,14 +687,13 @@ const AgentProperties = () => {
                   required
                 />
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Property Type</label>
                 <select
                   name="propertyType"
                   value={formData.propertyType}
                   onChange={(e) => {
-                    setFormData(prev => ({
+                    setFormData((prev) => ({
                       ...prev,
                       propertyType: e.target.value,
                       subCategory: e.target.value === 'plot' ? formData.plotType : e.target.value,
@@ -649,7 +707,6 @@ const AgentProperties = () => {
                   <option value="hostel">Hostel</option>
                 </select>
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
                 <select
@@ -662,7 +719,6 @@ const AgentProperties = () => {
                   <option value="rent">Rent</option>
                 </select>
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Price</label>
                 <input
@@ -675,7 +731,6 @@ const AgentProperties = () => {
                   required
                 />
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
                 <input
@@ -688,7 +743,6 @@ const AgentProperties = () => {
                   required
                 />
               </div>
-
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Latitude</label>
@@ -715,7 +769,6 @@ const AgentProperties = () => {
                   />
                 </div>
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Square Feet</label>
                 <input
@@ -728,9 +781,7 @@ const AgentProperties = () => {
                   required
                 />
               </div>
-
               {renderPropertySpecificFields()}
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Features (comma-separated)</label>
                 <input
@@ -742,7 +793,6 @@ const AgentProperties = () => {
                   placeholder="e.g., Swimming pool, Garden"
                 />
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
                 <textarea
@@ -752,9 +802,8 @@ const AgentProperties = () => {
                   rows={3}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Enter property description"
-                ></textarea>
+                />
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Photos (up to 5)</label>
                 <div className="border-2 border-dashed border-gray-300 rounded-md p-4 text-center">
@@ -775,12 +824,18 @@ const AgentProperties = () => {
                   </label>
                 </div>
               </div>
-
               <button
                 type="submit"
-                className="w-full bg-black text-white py-2 px-4 rounded-md hover:bg-gray-800 transition-colors"
+                disabled={createLoading || editLoading}
+                className="w-full bg-black text-white py-2 px-4 rounded-md hover:bg-gray-800 transition-colors disabled:opacity-50"
               >
-                {selectedProperty ? 'Update Property' : 'Add Property'}
+                {createLoading || editLoading
+                  ? selectedProperty
+                    ? 'Updating...'
+                    : 'Adding...'
+                  : selectedProperty
+                  ? 'Update Property'
+                  : 'Add Property'}
               </button>
             </form>
           </div>
