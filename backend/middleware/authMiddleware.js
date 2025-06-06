@@ -3,7 +3,7 @@ import asyncHandler from 'express-async-handler';
 import User from '../models/User.js';
 
 const protect = asyncHandler(async (req, res, next) => {
-  console.log('Cookies:', req.cookies); // Debug cookies
+  // console.log('Cookies:', req.cookies); // Debug cookies
   const token = req.cookies.token; // Changed from req.cookies.jwt
 
   if (!token) {
@@ -13,7 +13,7 @@ const protect = asyncHandler(async (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    console.log('Decoded JWT:', decoded); // Debug decoded token
+    // console.log('Decoded JWT:', decoded); // Debug decoded token
     req.user = await User.findById(decoded.id).select('-password'); // Changed userId to id
 
     if (!req.user) {

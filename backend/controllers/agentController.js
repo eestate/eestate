@@ -3,67 +3,157 @@
 import { Property, Apartment, Villa, Plot, Hostel } from "../models/Property.js";
 import cloudinary from "../config/cloudinary.js"; 
 import mongoose from "mongoose";
+import fs from 'fs'
+import { upload, uploadToCloudinary, checkCloudinaryHealth } from "../middleware/uploadMiddleware.js";
 
-// Add a new property
+// Helper function to get the appropriate model based on property type
+const getModelByType = (propertyType) => {
+  const models = {
+    apartment: Apartment,
+    villa: Villa,
+    plot: Plot,
+    hostel: Hostel
+  };
+  
+  if (!models[propertyType]) {
+    throw new Error(`Invalid property type: ${propertyType}`);
+  }
+  
+  return models[propertyType];
+};
+
 export const createProperty = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
-    const { propertyType, ...propertyData } = req.body;
-    const files = req.files; // Multer stores uploaded files here
+    console.log('Received files:', req.files?.map(f => ({ filename: f.originalname, size: f.size })));
+    console.log('Received body:', req.body); // Log entire body for debugging
 
-    // Validate required fields
-    if (!propertyType || !["apartment", "villa", "plot", "hostel"].includes(propertyType)) {
-      return res.status(400).json({ error: "Invalid or missing property type" });
+    if (!await checkCloudinaryHealth()) {
+      await session.abortTransaction();
+      return res.status(503).json({ error: "Media service unavailable" });
     }
 
-    // Upload images to Cloudinary
-    let imageUrls = [];
-    if (files && files.length > 0) {
-      const uploadPromises = files.map(file =>
-        cloudinary.uploader.upload(file.path, {
-          folder: "properties",
-          resource_type: "image",
-        })
-      );
-      const uploadResults = await Promise.all(uploadPromises);
-      imageUrls = uploadResults.map(result => result.secure_url);
+    const { propertyType, latitude, longitude, ...propertyData } = req.body;
+    const files = req.files;
+
+    if (!["apartment", "villa", "plot", "hostel"].includes(propertyType)) {
+      await session.abortTransaction();
+      return res.status(400).json({ error: "Invalid property type" });
     }
 
-    // Prepare property data
+    // Validate coordinates
+    if (latitude === undefined || longitude === undefined) {
+      await session.abortTransaction();
+      return res.status(400).json({ error: "Latitude and longitude are required" });
+    }
+
+    const lat = parseFloat(latitude);
+    const lng = parseFloat(longitude);
+
+    if (isNaN(lat) || isNaN(lng)) {
+      await session.abortTransaction();
+      return res.status(400).json({ 
+        error: "Invalid coordinates",
+        details: `Received latitude: ${latitude}, longitude: ${longitude}`
+      });
+    }
+
+    if (lat < -90 || lat > 90) {
+      await session.abortTransaction();
+      return res.status(400).json({ 
+        error: "Invalid latitude",
+        details: "Latitude must be between -90 and 90 degrees"
+      });
+    }
+
+    if (lng < -180 || lng > 180) {
+      await session.abortTransaction();
+      return res.status(400).json({ 
+        error: "Invalid longitude",
+        details: "Longitude must be between -180 and 180 degrees"
+      });
+    }
+
+    // Validate file sizes
+    if (files?.some(f => f.size > 10 * 1024 * 1024)) {
+      await session.abortTransaction();
+      return res.status(400).json({ error: "File size exceeds 10MB limit" });
+    }
+
+    const uploadedImages = [];
+    for (const file of files || []) {
+      console.log(`Uploading file: ${file.originalname}`);
+      try {
+        const result = await uploadToCloudinary(file);
+        uploadedImages.push({
+          url: result.secure_url,
+          publicId: result.public_id
+        });
+      } catch (error) {
+        console.error(`Upload failed for ${file.originalname}:`, error);
+        await Promise.all(
+          uploadedImages.map(img => cloudinary.uploader.destroy(img.publicId))
+        );
+        await session.abortTransaction();
+        return res.status(500).json({ 
+          error: "File upload failed",
+          details: error.message
+        });
+      }
+    }
+
     const propertyPayload = {
       ...propertyData,
-      images: imageUrls,
-      listedBy: req.user._id, // Assuming user is authenticated and ID is available
+      price: parseFloat(propertyData.price) || 0,
+      sqft: parseFloat(propertyData.sqft) || 0,
+      bedrooms: parseInt(propertyData.bedrooms) || undefined,
+      bathrooms: parseInt(propertyData.bathrooms) || undefined,
+      floorNumber: parseInt(propertyData.floorNumber) || undefined,
+      totalFloors: parseInt(propertyData.totalFloors) || undefined,
+      balcony: propertyData.balcony === 'true' || propertyData.balcony === true,
+      garden: propertyData.garden === 'true' || propertyData.garden === true,
+      swimmingPool: propertyData.swimmingPool === 'true' || propertyData.swimmingPool === true,
+      garage: propertyData.garage === 'true' || propertyData.garage === true,
+      boundaryWall: propertyData.boundaryWall === 'true' || propertyData.boundaryWall === true,
+      sharedRooms: propertyData.sharedRooms === 'true' || propertyData.sharedRooms === true,
+      foodIncluded: propertyData.foodIncluded === 'true' || propertyData.foodIncluded === true,
+      features: typeof propertyData.features === 'string' 
+        ? JSON.parse(propertyData.features || '[]') 
+        : Array.isArray(propertyData.features) ? propertyData.features : [],
+      images: uploadedImages.map(img => img.url),
+      listedBy: req.user._id,
+      location: {
+        type: "Point",
+        coordinates: [lng, lat], // [longitude, latitude]
+        state: propertyData.state || '',
+        state_district: propertyData.district || '',
+        village: propertyData.village || '',
+        county: propertyData.county || '',
+        placeName: propertyData.placeName || "Unknown location",
+        fullAddress: propertyData.address || ''
+      }
     };
 
-    // Create property based on type
-    let newProperty;
-    switch (propertyType) {
-      case "apartment":
-        newProperty = new Apartment(propertyPayload);
-        break;
-      case "villa":
-        newProperty = new Villa(propertyPayload);
-        break;
-      case "plot":
-        newProperty = new Plot(propertyPayload);
-        break;
-      case "hostel":
-        newProperty = new Hostel(propertyPayload);
-        break;
-      default:
-        return res.status(400).json({ error: "Invalid property type" });
-    }
-
-    // Save property to database
-    await newProperty.save();
+    const PropertyModel = getModelByType(propertyType);
+    const newProperty = await new PropertyModel(propertyPayload).save({ session });
+    await session.commitTransaction();
 
     return res.status(201).json({
       success: true,
-      data: newProperty,
-      message: "Property added successfully",
+      data: newProperty
     });
+
   } catch (error) {
-    return res.status(500).json({ error: error.message || "Server error" });
+    await session.abortTransaction();
+    console.error("Property creation error:", error);
+    return res.status(500).json({ 
+      error: "Server error",
+      details: process.env.NODE_ENV === "development" ? error.message : undefined
+    });
+  } finally {
+    session.endSession();
   }
 };
 
@@ -100,7 +190,7 @@ export const editProperty = async (req, res) => {
       // Upload new images
       const uploadPromises = files.map(file =>
         cloudinary.uploader.upload(file.path, {
-          folder: "properties",
+          folder: "eestate",
           resource_type: "image",
         })
       );
