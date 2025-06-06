@@ -1,37 +1,28 @@
-import { useCheckAuthQuery, useLogoutMutation } from "@/redux/services/authApi";
+import { authApi, useCheckAuthQuery, useLogoutMutation } from "@/redux/services/authApi";
+import { useEffect } from "react";
+import { useDispatch } from "react-redux";
+
 
 export const useAuth = () => {
-  const { data, isLoading, isError, refetch } = useCheckAuthQuery(undefined, {
-    refetchOnMountOrArgChange: true,
-  });
-
+  const { data, isLoading, refetch } = useCheckAuthQuery();
   const [logoutMutation] = useLogoutMutation();
-
-  const user = data?.user || JSON.parse(localStorage.getItem('user') || 'null');
-  
-  const isAuthenticated = Boolean(
-    data?.isAuthenticated || 
-    (user && document.cookie.includes('token'))
-  );
+  const dispatch = useDispatch();
 
   const logout = async () => {
-    try {
-      await logoutMutation().unwrap();
-      localStorage.removeItem('user');
-      // Clear any other auth-related state if needed
-      return true;
-    } catch (error) {
-      console.error('Logout failed:', error);
-      return false;
-    }
+    await logoutMutation();
+    dispatch(authApi.util.resetApiState());
+    await refetch();
   };
 
+  useEffect(() => {
+    refetch();
+  }, []);
+
   return {
-    user,
-    isAuthenticated,
+    user: data?.user,
+    isAuthenticated: !!data?.isAuthenticated,
     isLoading,
-    isError,
-    refetchAuth: refetch,
-    logout // Make sure to expose the logout function
+    logout,
+    refetch,
   };
 };

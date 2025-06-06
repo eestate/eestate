@@ -1,5 +1,6 @@
 
 
+
 import { Property } from '../models/Property.js';
 import User from '../models/User.js';
 
@@ -136,6 +137,48 @@ export const removeFromWishlist = async (req, res, next) => {
     user.wishlist = user.wishlist.filter(id => id.toString() !== propertyId);
     await user.save();
     res.status(200).json({ success: true });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+export const getPropertyImagesByCategory = async (req, res, next) => {
+  try {
+    const { category } = req.params;
+    const { limit = 4 } = req.query;
+
+    const categoryMap = {
+      'commercial': 'commercial',
+      'shop-showroom': 'retail_shop',
+      'industrial': 'industrial'
+    };
+
+    const properties = await Property.find({
+      subCategory: categoryMap[category],
+      isActive: true,
+      images: { $exists: true, $not: { $size: 0 } }
+    })
+    .limit(Number(limit))
+    .sort({ createdAt: -1 })
+    .select('images'); 
+
+    const images = properties.flatMap(property => property.images.slice(0, 1)); 
+
+    res.status(200).json(images);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getFeaturedProperties = async (req, res, next) => {
+  try {
+    const properties = await Property.find({ isActive: true })
+      .sort({ views: -1 })
+      .limit(8)
+      .select('name price images location subCategory');
+
+    res.status(200).json(properties);
   } catch (error) {
     next(error);
   }

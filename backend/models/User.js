@@ -45,6 +45,10 @@ isBlocked:{
     type:Boolean,
     default:false,
 },
+isVerified:{
+    type:Boolean,
+
+},
 isSubscribed:{
     type:Boolean,
     default:false,
