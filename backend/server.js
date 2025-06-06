@@ -17,7 +17,25 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT;
 
-connectDB();
+import { Property } from './models/Property.js';
+
+const initializeDB = async () => {
+  try {
+    // Warm up indexes
+    await Property.initializeIndexes();
+    
+    // For production: Refresh indexes periodically
+    if (process.env.NODE_ENV === 'production') {
+      setInterval(async () => {
+        await Property.syncIndexes();
+      }, 86400000); // Daily sync
+    }
+  } catch (err) {
+    console.error('Database initialization failed:', err);
+  }
+};
+
+connectDB().then(initializeDB);
 
 
 app.use(cors({

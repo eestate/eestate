@@ -1,7 +1,7 @@
 import express from 'express';
 import { createProperty, getMyProperties, editProperty, deleteProperty, getAgentStats } from '../controllers/agentController.js';
 import { protect } from '../middleware/authMiddleware.js';
-import upload from '../middleware/uploadMiddleware.js';
+import {upload} from '../middleware/uploadMiddleware.js';
 
 const router = express.Router();
 

@@ -30,6 +30,7 @@ const App = () => {
           <Route path="/properties" element={<PropertyListing />} />
           <Route path="/property/:id" element={<PropertyDetail />} />
           
+          
           {/* Protected User Routes */}
           <Route 
             path="/profile" 

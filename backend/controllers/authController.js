@@ -197,15 +197,15 @@ export const updateProfile = async (req, res, next) => {
 
 export const checkAuth = async (req, res) => {
 
-  console.log('Check auth headers:', req.headers);
-    console.log('Check auth cookies:', req.cookies)
+  // console.log('Check auth headers:', req.headers);
+    // console.log('Check auth cookies:', req.cookies)
 
   try {
     if (!req.user) {
       return res.status(401).json({ isAuthenticated: false });
     }
     
-    console.log('User authenticated:', req.user._id);
+    // console.log('User authenticated:', req.user._id);
 
     res.status(200).json({
       isAuthenticated: true,
@@ -235,7 +235,7 @@ export const logout = async (req, res) => {
       domain: 'localhost'
     });
 
-    console.log('Cookies after clear:', res.getHeaders()['set-cookie']);
+    // console.log('Cookies after clear:', res.getHeaders()['set-cookie']);
 
     res.status(200).json({ success: true, message: 'Logged out successfully' });
   } catch (error) {
