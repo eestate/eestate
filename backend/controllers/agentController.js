@@ -2,6 +2,7 @@
 
 import { Property, Apartment, Villa, Plot, Hostel } from "../models/Property.js";
 import cloudinary from "../config/cloudinary.js"; 
+import mongoose from "mongoose";
 
 // Add a new property
 export const createProperty = async (req, res) => {
@@ -126,8 +127,9 @@ export const editProperty = async (req, res) => {
 
 // Delete a property
 export const deleteProperty = async (req, res) => {
-  try {
     const { propertyId } = req.params;
+
+  try {
     console.log(`Attempting to delete property with ID: ${propertyId}`);
 
     // Validate ObjectId
