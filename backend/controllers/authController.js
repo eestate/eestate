@@ -3,6 +3,8 @@ import { OAuth2Client } from "google-auth-library";
 import User from "../models/User.js";
 import generateToken from "../utils/generateToken.js";
 import bcrypt from 'bcrypt'
+import cloudinary from '../config/cloudinary.js';
+
 
 const client= new OAuth2Client(process.env.GOOGLE_CLIENT_ID)
 
@@ -111,22 +113,42 @@ export const login = async (req, res, next) => {
   }
 };
 
-
 export const updateProfile = async (req, res, next) => {
   try {
-    const { gender, phone, profilePic } = req.body;
+    const { gender, phone, name } = req.body; 
     const user = await User.findById(req.user._id);
-    
+
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
     if (gender) user.gender = gender;
     if (phone) user.phone = phone;
-    if (profilePic) user.profilePic = profilePic;
+    if (name) user.name = name; 
+
+    if (req.file) {
+      try {
+        // Convert buffer to base64 properly
+        const base64Data = req.file.buffer.toString('base64');
+        const dataUri = `data:${req.file.mimetype};base64,${base64Data}`;
+        
+        const uploadResponse = await cloudinary.uploader.upload(dataUri, {
+          folder: 'profile_pics',
+          format: 'jpg',
+        });
+        
+        user.profilePic = uploadResponse.secure_url;
+      } catch (uploadError) {
+        console.error('Cloudinary upload error:', uploadError);
+        return res.status(500).json({ 
+          message: 'Failed to upload profile picture',
+          error: uploadError.message 
+        });
+      }
+    }
 
     const updatedUser = await user.save();
-    
+
     res.status(200).json({
       _id: updatedUser._id,
       name: updatedUser.name,
@@ -134,12 +156,44 @@ export const updateProfile = async (req, res, next) => {
       gender: updatedUser.gender,
       phone: updatedUser.phone,
       profilePic: updatedUser.profilePic,
-      role: updatedUser.role
+      role: updatedUser.role,
     });
   } catch (error) {
-    next(error);
+    console.error('Error in updateProfile:', error);
+    res.status(500).json({ 
+      message: 'Profile update failed',
+      error: error.message 
+    });
   }
 };
+// export const updateProfile = async (req, res, next) => {
+//   try {
+//     const { gender, phone, profilePic } = req.body;
+//     const user = await User.findById(req.user._id);
+    
+//     if (!user) {
+//       return res.status(404).json({ message: 'User not found' });
+//     }
+
+//     if (gender) user.gender = gender;
+//     if (phone) user.phone = phone;
+//     if (profilePic) user.profilePic = profilePic;
+
+//     const updatedUser = await user.save();
+    
+//     res.status(200).json({
+//       _id: updatedUser._id,
+//       name: updatedUser.name,
+//       email: updatedUser.email,
+//       gender: updatedUser.gender,
+//       phone: updatedUser.phone,
+//       profilePic: updatedUser.profilePic,
+//       role: updatedUser.role
+//     });
+//   } catch (error) {
+//     next(error);
+//   }
+// };
 
 export const checkAuth = async (req, res) => {
 
