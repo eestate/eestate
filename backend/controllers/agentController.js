@@ -1,7 +1,8 @@
 
-
+import mongoose from "mongoose";
 import { Property, Apartment, Villa, Plot, Hostel } from "../models/Property.js";
 import cloudinary from "../config/cloudinary.js"; 
+
 
 // Add a new property
 export const createProperty = async (req, res) => {
@@ -126,12 +127,15 @@ export const editProperty = async (req, res) => {
 
 // Delete a property
 export const deleteProperty = async (req, res) => {
+  const { propertyId } = req.params; // Ensure propertyId matches the route parameter
+
   try {
-    const { propertyId } = req.params;
+    // Correctly destructure propertyId from req.params
     console.log(`Attempting to delete property with ID: ${propertyId}`);
 
     // Validate ObjectId
     if (!mongoose.isValidObjectId(propertyId)) {
+      console.log(`Invalid ObjectId: ${propertyId}`);
       return res.status(400).json({ error: "Invalid property ID" });
     }
 
@@ -142,19 +146,27 @@ export const deleteProperty = async (req, res) => {
       return res.status(404).json({ error: "Property not found" });
     }
 
-    // Check if user is authorized to delete
+    // Check authorization
     if (property.listedBy.toString() !== req.user._id.toString()) {
       console.log(`User ${req.user._id} unauthorized to delete property ${propertyId}`);
       return res.status(403).json({ error: "Unauthorized to delete this property" });
     }
 
-    // Delete images from Cloudinary
+    // Delete images from Cloudinary (with error handling)
     if (property.images.length > 0) {
-      const deletePromises = property.images.map(url => {
-        const publicId = url.split("/").pop().split(".")[0];
-        return cloudinary.uploader.destroy(`properties/${publicId}`);
-      });
-      await Promise.all(deletePromises);
+      try {
+        const deletePromises = property.images.map(url => {
+          const publicId = url.split("/").pop().split(".")[0];
+          console.log(`Deleting image with publicId: ${publicId}`);
+          return cloudinary.uploader.destroy(`properties/${publicId}`).catch(err => {
+            console.warn(`Failed to delete image ${publicId}:`, err);
+            return null; // Continue even if image deletion fails
+          });
+        });
+        await Promise.all(deletePromises);
+      } catch (err) {
+        console.warn("Image deletion failed, proceeding with property deletion:", err);
+      }
     }
 
     // Delete property
@@ -171,14 +183,13 @@ export const deleteProperty = async (req, res) => {
     return res.status(500).json({ error: error.message || "Server error" });
   }
 };
-
 export const getMyProperties = async (req, res, next) => {
   try {
     if (req.user.role !== 'agent') {
       return res.status(403).json({ message: 'Only agents can view their properties' });
     }
 
-    const properties = await Property.find({ listedBy: req.user._id, isActive: true });
+    const properties = await Property.find({ listedBy: req.user._id });
     await Promise.all(
       properties.map(property =>
         Property.findByIdAndUpdate(property._id, { $inc: { views: 1 } }, { new: true })
