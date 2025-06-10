@@ -209,7 +209,12 @@ export const checkAuth = async (req, res) => {
 
     res.status(200).json({
       isAuthenticated: true,
-      user: req.user
+      user: {
+        id: req.user._id,
+        email: req.user.email,
+        name: req.user.name,
+        role: req.user.role
+      }
     });
   } catch (error) {
      console.error('Check auth error:', error);
