@@ -20,29 +20,39 @@ export const agentApi = createApi({
       query: () => 'my',
       providesTags: ['Properties'],
     }),
-    createProperty: builder.mutation({
-      query: ({ propertyData, images }) => {
-        const formData = new FormData();
-        Object.entries(propertyData).forEach(([key, value]) => {
-          if (value !== undefined && value !== null) {
-            if (key === 'coordinates' || key === 'features') {
-              formData.append(key, JSON.stringify(value));
-            } else {
-              formData.append(key, value);
-            }
-          }
-        });
-        images.forEach((image) => {
-          formData.append('images', image);
-        });
-        return {
-          url: '/',
-          method: 'POST',
-          body: formData,
-        };
-      },
-      invalidatesTags: ['Properties', 'AgentStats'],
-    }),
+createProperty: builder.mutation({
+  query: ({ propertyData, images }) => {
+    const formData = new FormData();
+    Object.entries(propertyData).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        if (key === 'latitude' || key === 'longitude') {
+          formData.append(key, value.toString());
+        } else if (key === 'features') {
+          formData.append(key, JSON.stringify(value));
+        } else if (typeof value === 'boolean') {
+          formData.append(key, value.toString());
+        } else {
+          formData.append(key, value);
+        }
+      }
+    });
+    images.forEach((image, index) => {
+      formData.append('images', image);
+    });
+
+    // Log FormData for debugging
+    for (let [key, value] of formData.entries()) {
+      console.log(`FormData: ${key} = ${value}`);
+    }
+
+    return {
+      url: '/',
+      method: 'POST',
+      body: formData,
+    };
+  },
+  invalidatesTags: ['Properties', 'AgentStats'],
+}),
     editProperty: builder.mutation({
       query: ({ id, propertyData, images }) => {
         const formData = new FormData();

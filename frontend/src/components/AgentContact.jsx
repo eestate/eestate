@@ -1,12 +1,14 @@
 import React, { useState } from 'react'
-import { UserIcon, MailIcon, PhoneIcon, MessageSquareIcon } from 'lucide-react'
+import { UserIcon, MailIcon, PhoneIcon, MessageSquareIcon, CalendarIcon, ClockIcon } from 'lucide-react'
 
 const AgentContact = ({ agent }) => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
-    message: '',
+    message: "I'm Interested In this property...",
+    date: '',
+    time: ''
   })
   const [showChat, setShowChat] = useState(false)
 
@@ -20,13 +22,15 @@ const AgentContact = ({ agent }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    console.log('Form submitted:', formData)
-    alert('Message sent to agent!')
+    console.log('Visit scheduled:', formData)
+    alert('Visit scheduled successfully!')
     setFormData({
       name: '',
       email: '',
       phone: '',
-      message: '',
+      message: "I'm Interested In this property...",
+      date: '',
+      time: ''
     })
   }
 
@@ -86,58 +90,43 @@ const AgentContact = ({ agent }) => {
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Your Name
             </label>
-            <div className="relative">
-              <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-500">
-                <UserIcon size={16} />
-              </span>
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                className="w-full pl-10 p-2 border border-gray-300 rounded"
-                placeholder="Enter your name"
-                required
-              />
-            </div>
+            <input
+              type="text"
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              className="w-full p-2 border border-gray-300 rounded"
+              placeholder="Enter your name"
+              required
+            />
           </div>
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Email
             </label>
-            <div className="relative">
-              <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-500">
-                <MailIcon size={16} />
-              </span>
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                className="w-full pl-10 p-2 border border-gray-300 rounded"
-                placeholder="Enter your email"
-                required
-              />
-            </div>
+            <input
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              className="w-full p-2 border border-gray-300 rounded"
+              placeholder="Enter your email"
+              required
+            />
           </div>
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Phone
             </label>
-            <div className="relative">
-              <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-500">
-                <PhoneIcon size={16} />
-              </span>
-              <input
-                type="tel"
-                name="phone"
-                value={formData.phone}
-                onChange={handleChange}
-                className="w-full pl-10 p-2 border border-gray-300 rounded"
-                placeholder="Enter your phone number"
-                required
-              />
-            </div>
+            <input
+              type="tel"
+              name="phone"
+              value={formData.phone}
+              onChange={handleChange}
+              className="w-full p-2 border border-gray-300 rounded"
+              placeholder="Enter your phone number"
+              required
+            />
           </div>
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -153,11 +142,50 @@ const AgentContact = ({ agent }) => {
               required
             ></textarea>
           </div>
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Choose Date and Time
+            </label>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="relative">
+                <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-500">
+                  <CalendarIcon size={16} />
+                </span>
+                <input
+                  type="text"
+                  name="date"
+                  value={formData.date}
+                  onChange={handleChange}
+                  className="w-full pl-10 p-2 border border-gray-300 rounded"
+                  placeholder="mm/dd/yyyy"
+                  onFocus={(e) => (e.target.type = 'date')}
+                  onBlur={(e) => (e.target.type = 'text')}
+                  required
+                />
+              </div>
+              <div className="relative">
+                <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-500">
+                  <ClockIcon size={16} />
+                </span>
+                <input
+                  type="text"
+                  name="time"
+                  value={formData.time}
+                  onChange={handleChange}
+                  className="w-full pl-10 p-2 border border-gray-300 rounded"
+                  placeholder="00 AM PM"
+                  onFocus={(e) => (e.target.type = 'time')}
+                  onBlur={(e) => (e.target.type = 'text')}
+                  required
+                />
+              </div>
+            </div>
+          </div>
           <button
             type="submit"
             className="w-full bg-black text-white py-2 rounded-md hover:bg-gray-800 transition-colors"
           >
-            Send Message
+            Schedule Visit
           </button>
         </form>
       )}

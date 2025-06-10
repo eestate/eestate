@@ -2,68 +2,158 @@
 import mongoose from "mongoose";
 import { Property, Apartment, Villa, Plot, Hostel } from "../models/Property.js";
 import cloudinary from "../config/cloudinary.js"; 
+import mongoose from "mongoose";
+import fs from 'fs'
+import { upload, uploadToCloudinary, checkCloudinaryHealth } from "../middleware/uploadMiddleware.js";
 
+// Helper function to get the appropriate model based on property type
+const getModelByType = (propertyType) => {
+  const models = {
+    apartment: Apartment,
+    villa: Villa,
+    plot: Plot,
+    hostel: Hostel
+  };
+  
+  if (!models[propertyType]) {
+    throw new Error(`Invalid property type: ${propertyType}`);
+  }
+  
+  return models[propertyType];
+};
 
-// Add a new property
 export const createProperty = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
-    const { propertyType, ...propertyData } = req.body;
-    const files = req.files; // Multer stores uploaded files here
+    console.log('Received files:', req.files?.map(f => ({ filename: f.originalname, size: f.size })));
+    console.log('Received body:', req.body); // Log entire body for debugging
 
-    // Validate required fields
-    if (!propertyType || !["apartment", "villa", "plot", "hostel"].includes(propertyType)) {
-      return res.status(400).json({ error: "Invalid or missing property type" });
+    if (!await checkCloudinaryHealth()) {
+      await session.abortTransaction();
+      return res.status(503).json({ error: "Media service unavailable" });
     }
 
-    // Upload images to Cloudinary
-    let imageUrls = [];
-    if (files && files.length > 0) {
-      const uploadPromises = files.map(file =>
-        cloudinary.uploader.upload(file.path, {
-          folder: "properties",
-          resource_type: "image",
-        })
-      );
-      const uploadResults = await Promise.all(uploadPromises);
-      imageUrls = uploadResults.map(result => result.secure_url);
+    const { propertyType, latitude, longitude, ...propertyData } = req.body;
+    const files = req.files;
+
+    if (!["apartment", "villa", "plot", "hostel"].includes(propertyType)) {
+      await session.abortTransaction();
+      return res.status(400).json({ error: "Invalid property type" });
     }
 
-    // Prepare property data
+    // Validate coordinates
+    if (latitude === undefined || longitude === undefined) {
+      await session.abortTransaction();
+      return res.status(400).json({ error: "Latitude and longitude are required" });
+    }
+
+    const lat = parseFloat(latitude);
+    const lng = parseFloat(longitude);
+
+    if (isNaN(lat) || isNaN(lng)) {
+      await session.abortTransaction();
+      return res.status(400).json({ 
+        error: "Invalid coordinates",
+        details: `Received latitude: ${latitude}, longitude: ${longitude}`
+      });
+    }
+
+    if (lat < -90 || lat > 90) {
+      await session.abortTransaction();
+      return res.status(400).json({ 
+        error: "Invalid latitude",
+        details: "Latitude must be between -90 and 90 degrees"
+      });
+    }
+
+    if (lng < -180 || lng > 180) {
+      await session.abortTransaction();
+      return res.status(400).json({ 
+        error: "Invalid longitude",
+        details: "Longitude must be between -180 and 180 degrees"
+      });
+    }
+
+    // Validate file sizes
+    if (files?.some(f => f.size > 10 * 1024 * 1024)) {
+      await session.abortTransaction();
+      return res.status(400).json({ error: "File size exceeds 10MB limit" });
+    }
+
+    const uploadedImages = [];
+    for (const file of files || []) {
+      console.log(`Uploading file: ${file.originalname}`);
+      try {
+        const result = await uploadToCloudinary(file);
+        uploadedImages.push({
+          url: result.secure_url,
+          publicId: result.public_id
+        });
+      } catch (error) {
+        console.error(`Upload failed for ${file.originalname}:`, error);
+        await Promise.all(
+          uploadedImages.map(img => cloudinary.uploader.destroy(img.publicId))
+        );
+        await session.abortTransaction();
+        return res.status(500).json({ 
+          error: "File upload failed",
+          details: error.message
+        });
+      }
+    }
+
     const propertyPayload = {
       ...propertyData,
-      images: imageUrls,
-      listedBy: req.user._id, // Assuming user is authenticated and ID is available
+      price: parseFloat(propertyData.price) || 0,
+      sqft: parseFloat(propertyData.sqft) || 0,
+      bedrooms: parseInt(propertyData.bedrooms) || undefined,
+      bathrooms: parseInt(propertyData.bathrooms) || undefined,
+      floorNumber: parseInt(propertyData.floorNumber) || undefined,
+      totalFloors: parseInt(propertyData.totalFloors) || undefined,
+      balcony: propertyData.balcony === 'true' || propertyData.balcony === true,
+      garden: propertyData.garden === 'true' || propertyData.garden === true,
+      swimmingPool: propertyData.swimmingPool === 'true' || propertyData.swimmingPool === true,
+      garage: propertyData.garage === 'true' || propertyData.garage === true,
+      boundaryWall: propertyData.boundaryWall === 'true' || propertyData.boundaryWall === true,
+      sharedRooms: propertyData.sharedRooms === 'true' || propertyData.sharedRooms === true,
+      foodIncluded: propertyData.foodIncluded === 'true' || propertyData.foodIncluded === true,
+      features: typeof propertyData.features === 'string' 
+        ? JSON.parse(propertyData.features || '[]') 
+        : Array.isArray(propertyData.features) ? propertyData.features : [],
+      images: uploadedImages.map(img => img.url),
+      listedBy: req.user._id,
+      location: {
+        type: "Point",
+        coordinates: [lng, lat], // [longitude, latitude]
+        state: propertyData.state || '',
+        state_district: propertyData.district || '',
+        village: propertyData.village || '',
+        county: propertyData.county || '',
+        placeName: propertyData.placeName || "Unknown location",
+        fullAddress: propertyData.address || ''
+      }
     };
 
-    // Create property based on type
-    let newProperty;
-    switch (propertyType) {
-      case "apartment":
-        newProperty = new Apartment(propertyPayload);
-        break;
-      case "villa":
-        newProperty = new Villa(propertyPayload);
-        break;
-      case "plot":
-        newProperty = new Plot(propertyPayload);
-        break;
-      case "hostel":
-        newProperty = new Hostel(propertyPayload);
-        break;
-      default:
-        return res.status(400).json({ error: "Invalid property type" });
-    }
-
-    // Save property to database
-    await newProperty.save();
+    const PropertyModel = getModelByType(propertyType);
+    const newProperty = await new PropertyModel(propertyPayload).save({ session });
+    await session.commitTransaction();
 
     return res.status(201).json({
       success: true,
-      data: newProperty,
-      message: "Property added successfully",
+      data: newProperty
     });
+
   } catch (error) {
-    return res.status(500).json({ error: error.message || "Server error" });
+    await session.abortTransaction();
+    console.error("Property creation error:", error);
+    return res.status(500).json({ 
+      error: "Server error",
+      details: process.env.NODE_ENV === "development" ? error.message : undefined
+    });
+  } finally {
+    session.endSession();
   }
 };
 
@@ -100,7 +190,7 @@ export const editProperty = async (req, res) => {
       // Upload new images
       const uploadPromises = files.map(file =>
         cloudinary.uploader.upload(file.path, {
-          folder: "properties",
+          folder: "eestate",
           resource_type: "image",
         })
       );
@@ -125,12 +215,74 @@ export const editProperty = async (req, res) => {
   }
 };
 
-// Delete a property
+// // Delete a property
+// export const deleteProperty = async (req, res) => {
+// // <<<<<<< HEAD
+//   const { propertyId } = req.params; // Ensure propertyId matches the route parameter
+
+//   try {
+//     // Correctly destructure propertyId from req.params
+// // =======
+//     const { propertyId } = req.params;
+
+//   try {
+// // >>>>>>> efde905666920d399ae52d2ee6a202bf587b4b2e
+//     console.log(`Attempting to delete property with ID: ${propertyId}`);
+
+//     // Validate ObjectId
+//     if (!mongoose.isValidObjectId(propertyId)) {
+//       console.log(`Invalid ObjectId: ${propertyId}`);
+//       return res.status(400).json({ error: "Invalid property ID" });
+//     }
+
+//     // Find property
+//     const property = await Property.findById(propertyId);
+//     if (!property) {
+//       console.log(`Property with ID ${propertyId} not found`);
+//       return res.status(404).json({ error: "Property not found" });
+//     }
+
+//     // Check authorization
+//     if (property.listedBy.toString() !== req.user._id.toString()) {
+//       console.log(`User ${req.user._id} unauthorized to delete property ${propertyId}`);
+//       return res.status(403).json({ error: "Unauthorized to delete this property" });
+//     }
+
+//     // Delete images from Cloudinary (with error handling)
+//     if (property.images.length > 0) {
+//       try {
+//         const deletePromises = property.images.map(url => {
+//           const publicId = url.split("/").pop().split(".")[0];
+//           console.log(`Deleting image with publicId: ${publicId}`);
+//           return cloudinary.uploader.destroy(`properties/${publicId}`).catch(err => {
+//             console.warn(`Failed to delete image ${publicId}:`, err);
+//             return null; // Continue even if image deletion fails
+//           });
+//         });
+//         await Promise.all(deletePromises);
+//       } catch (err) {
+//         console.warn("Image deletion failed, proceeding with property deletion:", err);
+//       }
+//     }
+
+//     // Delete property
+//     await Property.findByIdAndDelete(propertyId);
+//     console.log(`Property ${propertyId} deleted successfully`);
+
+//     return res.status(200).json({
+//       success: true,
+//       data: null,
+//       message: "Property deleted successfully",
+//     });
+//   } catch (error) {
+//     console.error(`Error deleting property ${propertyId}:`, error);
+//     return res.status(500).json({ error: error.message || "Server error" });
+//   }
+// };
 export const deleteProperty = async (req, res) => {
-  const { propertyId } = req.params; // Ensure propertyId matches the route parameter
+    const { propertyId } = req.params;
 
   try {
-    // Correctly destructure propertyId from req.params
     console.log(`Attempting to delete property with ID: ${propertyId}`);
 
     // Validate ObjectId
@@ -152,21 +304,13 @@ export const deleteProperty = async (req, res) => {
       return res.status(403).json({ error: "Unauthorized to delete this property" });
     }
 
-    // Delete images from Cloudinary (with error handling)
+    // Delete images from Cloudinary
     if (property.images.length > 0) {
-      try {
-        const deletePromises = property.images.map(url => {
-          const publicId = url.split("/").pop().split(".")[0];
-          console.log(`Deleting image with publicId: ${publicId}`);
-          return cloudinary.uploader.destroy(`properties/${publicId}`).catch(err => {
-            console.warn(`Failed to delete image ${publicId}:`, err);
-            return null; // Continue even if image deletion fails
-          });
-        });
-        await Promise.all(deletePromises);
-      } catch (err) {
-        console.warn("Image deletion failed, proceeding with property deletion:", err);
-      }
+      const deletePromises = property.images.map(url => {
+        const publicId = url.split("/").pop().split(".")[0];
+        return cloudinary.uploader.destroy(`properties/${publicId}`);
+      });
+      await Promise.all(deletePromises);
     }
 
     // Delete property
