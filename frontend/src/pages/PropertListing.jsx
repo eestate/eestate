@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect } from 'react';
 import PropertyFilter from '../components/PropertyFilter';
 import PropertyCard from '../components/PropertyCard';
@@ -15,6 +13,8 @@ const PropertyListing = () => {
     maxPrice: '',
     bed: '',
     bathMin: '',
+    minSqft: '',
+    maxSqft: '',
   });
 
   // Fetch properties with filters
@@ -33,10 +33,12 @@ const PropertyListing = () => {
     setFilters({
       propertyType: newFilters.propertyType || '',
       slug: newFilters.location || '',
-      minPrice: newFilters.priceRange?.min || '',
-      maxPrice: newFilters.priceRange?.max || '',
-      bed: newFilters.beds || '',
-      bathMin: newFilters.baths || '',
+      minPrice: newFilters.minPrice || '',
+      maxPrice: newFilters.maxPrice || '',
+      bed: newFilters.bedrooms || '',
+      bathMin: newFilters.bathrooms || '',
+      minSqft: newFilters.minSqft || '',
+      maxSqft: newFilters.maxSqft || '',
     });
   };
 

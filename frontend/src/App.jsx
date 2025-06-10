@@ -10,6 +10,8 @@ import PropertyListing from './pages/PropertListing'
 import PropertyDetail from './pages/PropertDetail'
 import AgentNavbar from './pages/Agent/AgentNavbar'
 import About from './pages/About'
+import AgentListingPage from './pages/AgentListing'
+import AgentDetailsPage from './pages/AgentDetails'
 
 const App = () => {
   const location = useLocation()
@@ -23,6 +25,8 @@ const App = () => {
         <Route path='/properties' element={<PropertyListing/>} />
         <Route path="/property/:id" element={<PropertyDetail />} />
         <Route path='/about' element={<About/>}/>
+         <Route path="/agents" element={<AgentListingPage />} />
+          <Route path="/agents/:id" element={<AgentDetailsPage />} />
         <Route path='/agent' element={<AgentNavbar/>}/>
       </Routes>
       <Footer/>
