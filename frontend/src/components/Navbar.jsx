@@ -30,7 +30,7 @@ const Navbar = () => {
 
   const handleLogout = async () => {
     await logout();
-    window.location.href = '/'; // Simple page reload
+    window.location.href = '/'; 
   }
 
   const handleProfileClick = () => {

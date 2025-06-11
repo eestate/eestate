@@ -14,12 +14,15 @@ export const useAuth = () => {
     await refetch();
   };
 
+  
+
   useEffect(() => {
     refetch();
   }, []);
 
   return {
     user: data?.user,
+    role: data?.user?.role,
     isAuthenticated: !!data?.isAuthenticated,
     isLoading,
     logout,

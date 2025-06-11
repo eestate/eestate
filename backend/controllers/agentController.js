@@ -157,28 +157,23 @@ export const createProperty = async (req, res) => {
   }
 };
 
-// Edit a property
 export const editProperty = async (req, res) => {
   try {
     const { propertyId } = req.params;
     const { propertyType, ...updateData } = req.body;
     const files = req.files;
 
-    // Find property
     const property = await Property.findById(propertyId);
     if (!property) {
       return res.status(404).json({ error: "Property not found" });
     }
 
-    // Check if user is authorized to edit
     if (property.listedBy.toString() !== req.user._id.toString()) {
       return res.status(403).json({ error: "Unauthorized to edit this property" });
     }
 
-    // Handle image updates
     let imageUrls = property.images;
     if (files && files.length > 0) {
-      // Delete old images from Cloudinary (optional)
       if (imageUrls.length > 0) {
         const deletePromises = imageUrls.map(url => {
           const publicId = url.split("/").pop().split(".")[0];
@@ -187,7 +182,6 @@ export const editProperty = async (req, res) => {
         await Promise.all(deletePromises);
       }
 
-      // Upload new images
       const uploadPromises = files.map(file =>
         cloudinary.uploader.upload(file.path, {
           folder: "eestate",
@@ -198,7 +192,6 @@ export const editProperty = async (req, res) => {
       imageUrls = uploadResults.map(result => result.secure_url);
     }
 
-    // Update property data
     const updatedProperty = await Property.findByIdAndUpdate(
       propertyId,
       { ...updateData, images: imageUrls },
@@ -282,6 +275,7 @@ export const editProperty = async (req, res) => {
 export const deleteProperty = async (req, res) => {
     const { propertyId } = req.params;
 
+
   try {
     console.log(`Attempting to delete property with ID: ${propertyId}`);
 
@@ -291,7 +285,6 @@ export const deleteProperty = async (req, res) => {
       return res.status(400).json({ error: "Invalid property ID" });
     }
 
-    // Find property
     const property = await Property.findById(propertyId);
     if (!property) {
       console.log(`Property with ID ${propertyId} not found`);
@@ -304,7 +297,6 @@ export const deleteProperty = async (req, res) => {
       return res.status(403).json({ error: "Unauthorized to delete this property" });
     }
 
-    // Delete images from Cloudinary
     if (property.images.length > 0) {
       const deletePromises = property.images.map(url => {
         const publicId = url.split("/").pop().split(".")[0];
@@ -313,7 +305,6 @@ export const deleteProperty = async (req, res) => {
       await Promise.all(deletePromises);
     }
 
-    // Delete property
     await Property.findByIdAndDelete(propertyId);
     console.log(`Property ${propertyId} deleted successfully`);
 
@@ -326,7 +317,9 @@ export const deleteProperty = async (req, res) => {
     console.error(`Error deleting property ${propertyId}:`, error);
     return res.status(500).json({ error: error.message || "Server error" });
   }
-};
+}
+
+
 export const getMyProperties = async (req, res, next) => {
   try {
     if (req.user.role !== 'agent') {

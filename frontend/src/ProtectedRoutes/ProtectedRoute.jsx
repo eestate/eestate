@@ -1,21 +1,26 @@
-"use client"
-
+// src/components/ProtectedRoute.jsx
 import { useAuth } from '../hooks/useAuth';
-import AuthModal from '../pages/AuthModal';
-import { useState } from 'react';
+import { Navigate, useLocation } from 'react-router-dom';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
-export const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated, isLoading } = useAuth();
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+export const ProtectedRoute = ({ children, allowedRoles }) => {
+  const { isAuthenticated, isLoading, role } = useAuth();
+  const location = useLocation();
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <LoadingSpinner />;
   }
 
-  return (
-    <>
-      {children}
-      <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
-    </>
-  );
+  if (!isAuthenticated) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  if (allowedRoles && !allowedRoles.includes(role)) {
+    // Redirect to role-specific home
+    const redirectPath = role === 'agent' ? '/agent' : 
+                       role === 'admin' ? '/admin' : '/';
+    return <Navigate to={redirectPath} replace />;
+  }
+
+  return children;
 };

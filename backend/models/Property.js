@@ -281,7 +281,6 @@ basePropertySchema.statics.initializeIndexes = async function() {
 // Base model
 const Property = mongoose.model("Property", basePropertySchema);
 
-// Apartment schema
 const Apartment = Property.discriminator("apartment", new mongoose.Schema({
   floorNumber: Number,
   totalFloors: Number,
@@ -290,7 +289,6 @@ const Apartment = Property.discriminator("apartment", new mongoose.Schema({
   balcony: Boolean,
 }));
 
-// Villa schema
 const Villa = Property.discriminator("villa", new mongoose.Schema({
   plotArea: Number,
   garden: Boolean,
@@ -300,13 +298,11 @@ const Villa = Property.discriminator("villa", new mongoose.Schema({
   bathrooms: Number,
 }));
 
-// Plot schema
 const Plot = Property.discriminator("plot", new mongoose.Schema({
   plotType: { type: String, enum: ["residential", "commercial"] },
   boundaryWall: Boolean,
 }));
 
-// Hostel schema
 const Hostel = Property.discriminator("hostel", new mongoose.Schema({
   totalRooms: Number,
   sharedRooms: Boolean,

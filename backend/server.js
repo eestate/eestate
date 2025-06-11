@@ -11,6 +11,7 @@ import userRoutes from './routes/userRoutes.js'
 import agentRoutes from './routes/agentRoutes.js'
 import PropertyRoutes from './routes/propertyRoutes.js'
 import subscriptionRoutes from './routes/subscriptionRoutes.js'
+import chatRoutes from "./routes/chatRoutes.js" 
 
 dotenv.config();
 const app = express();
@@ -57,13 +58,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/agent', agentRoutes);
 app.use('/api/property', PropertyRoutes);
-app.use(
-  '/api/subscription/webhook',
-  express.raw({ type: 'application/json' }),
-  subscriptionRoutes
-);
 app.use('/api', subscriptionRoutes);
-
+app.use("/api/chat", chatRoutes);
 
 
 

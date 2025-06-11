@@ -18,7 +18,7 @@ const AgentProperties = () => {
   });
   const [createProperty, { isLoading: createLoading, error: createError, isSuccess: createSuccess }] = useCreatePropertyMutation();
   const [editProperty, { isLoading: editLoading, error: editError, isSuccess: editSuccess }] = useEditPropertyMutation();
-  const [deleteProperty, { isLoading: deleteLoading, error: deleteError }] = useDeletePropertyMutation();
+  const [deleteProperty, { isLoading: deleteLoading}] = useDeletePropertyMutation();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);

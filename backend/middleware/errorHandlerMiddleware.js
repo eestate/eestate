@@ -1,5 +1,5 @@
 const errorHandler = (err, req, res, next) => {
-  console.error('Error:', err.stack); // Log error for debugging
+  console.error('Error:', err.stack); 
   const statusCode = res.statusCode >= 400 ? res.statusCode : 500;
   res.status(statusCode).json({
     message: err.message,

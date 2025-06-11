@@ -43,7 +43,7 @@ export default function AuthModal({ isOpen, onClose }) {
     gender: "",
     phoneNumber: "",
   })
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated,role } = useAuth()
   const navigate = useNavigate()
 
   const { refetch } = useAuth();
@@ -90,7 +90,17 @@ export default function AuthModal({ isOpen, onClose }) {
     }
   }, [isAuthenticated, isOpen, currentStep, navigate, onClose]);
 
-
+const handleAuthSuccess = (role) => {
+  localStorage.setItem('user', JSON.stringify(user));
+  
+ 
+  let redirectPath = '/';
+  if (role === 'agent') redirectPath = '/agent';
+  if (role === 'admin') redirectPath = '/admin';
+  
+  navigate(redirectPath);
+  onClose();
+};
 
   const handleLogin = async (data) => {
     try {
@@ -101,9 +111,7 @@ export default function AuthModal({ isOpen, onClose }) {
       if (response.user) {
         toast.success("Login successful!");
         const role = response.user?.role;
-        if (role === "user") navigate("/");
-        else if (role === "agent") navigate("/agent");
-        else if (role === "admin") navigate("/admin");
+        handleAuthSuccess(role)
         onClose();
       }
     } catch (error) {
