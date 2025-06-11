@@ -2,7 +2,6 @@
 import mongoose from "mongoose";
 import { Property, Apartment, Villa, Plot, Hostel } from "../models/Property.js";
 import cloudinary from "../config/cloudinary.js"; 
-import mongoose from "mongoose";
 import fs from 'fs'
 import { upload, uploadToCloudinary, checkCloudinaryHealth } from "../middleware/uploadMiddleware.js";
 

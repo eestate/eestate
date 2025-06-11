@@ -13,6 +13,13 @@ import AgentDashboard from './pages/Agent/AgentDashboard'
 import AgentProperties from './pages/Agent/AgentProperties'
 import AgentMessages from './pages/Agent/AgentMessages'
 import AgentEnquiries from './pages/Agent/AgentEnquiries'
+import { AdminSidebar } from './pages/admin/AdminSidebar'
+import AdminLayout from './layouts/AdminLayout'
+import AdminDashboard from './pages/admin/AdminDashboard'
+import AdminUserManagement from './pages/admin/AdminuserManagement'
+import AdminProperty from './pages/admin/AdminProperty'
+import AdminSubscription from './pages/admin/AdminSubctription'
+import AdminBooking from './pages/admin/AdminBooking'
 
 const App = () => {
   const location = useLocation()
@@ -57,7 +64,18 @@ const App = () => {
           </Route>
           
           {/* Admin Routes (if needed) */}
-          {/* <Route path="/admin/*" element={<AdminLayout />} /> */}
+
+          <Route path='/admin' element={<ProtectedRoute allowedRoles={['admin']}>
+<AdminLayout/>
+          </ProtectedRoute>}>
+
+          <Route index element={<AdminDashboard/>}/>
+          <Route path='dashboard' element={<AdminDashboard/>}/>
+          <Route path='user-management' element={<AdminUserManagement/>}/>
+          <Route path='property-moderation' element={<AdminProperty/>}/>
+          <Route path='subscriptions' element={<AdminSubscription/>}/>
+          <Route path='bookings'  element={<AdminBooking/>}/>          
+          </Route>
         </Routes>
       </main>
       
@@ -67,3 +85,4 @@ const App = () => {
 }
 
 export default App
+
