@@ -148,7 +148,7 @@ export const updateProfile = async (req, res, next) => {
     }
 
     const updatedUser = await user.save();
-
+    
     res.status(200).json({
       _id: updatedUser._id,
       name: updatedUser.name,
@@ -165,35 +165,7 @@ export const updateProfile = async (req, res, next) => {
       error: error.message 
     });
   }
-};
-// export const updateProfile = async (req, res, next) => {
-//   try {
-//     const { gender, phone, profilePic } = req.body;
-//     const user = await User.findById(req.user._id);
-    
-//     if (!user) {
-//       return res.status(404).json({ message: 'User not found' });
-//     }
-
-//     if (gender) user.gender = gender;
-//     if (phone) user.phone = phone;
-//     if (profilePic) user.profilePic = profilePic;
-
-//     const updatedUser = await user.save();
-    
-//     res.status(200).json({
-//       _id: updatedUser._id,
-//       name: updatedUser.name,
-//       email: updatedUser.email,
-//       gender: updatedUser.gender,
-//       phone: updatedUser.phone,
-//       profilePic: updatedUser.profilePic,
-//       role: updatedUser.role
-//     });
-//   } catch (error) {
-//     next(error);
-//   }
-// };
+};  
 
 export const checkAuth = async (req, res) => {
 
