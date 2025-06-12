@@ -2,17 +2,21 @@ import React from 'react'
 import { Routes, Route, useLocation } from 'react-router-dom'
 import Home from './pages/Home'
 import Navbar from './components/Navbar'
-import { ProtectedRoute } from './ProtectedRoutes/ProtectedRoute'
 import Profile from './pages/user/Profile'
 import Footer from './components/Footer'
 import PropertyListing from './pages/PropertListing'
 import PropertyDetail from './pages/PropertDetail'
-import RoleRouter from './ProtectedRoutes/RoleRouter'
 import AgentLayout from './layouts/AgentLayout'
 import AgentDashboard from './pages/Agent/AgentDashboard'
 import AgentProperties from './pages/Agent/AgentProperties'
 import AgentMessages from './pages/Agent/AgentMessages'
 import AgentEnquiries from './pages/Agent/AgentEnquiries'
+import AgentListingPage from './pages/AgentListing'
+import AgentDetailsPage from './pages/AgentDetails'
+import About from './pages/About'
+import { AuthStateChecker } from './components/AuthStateChecker'
+import { ProtectedRoute } from './ProtectedRoutes/ProtectedRoute'
+import RoleRouter from './ProtectedRoutes/RoleRouter'
 
 const App = () => {
   const location = useLocation()
@@ -21,7 +25,8 @@ const App = () => {
   return (
     <div className="flex flex-col min-h-screen">
       {!isAdminOrAgentRoute && <Navbar />}
-      <RoleRouter />
+      <AuthStateChecker />
+      <RoleRouter/>
       
       <main className="flex-grow">
         <Routes>
@@ -29,7 +34,11 @@ const App = () => {
           <Route path="/" element={<Home />} />
           <Route path="/properties" element={<PropertyListing />} />
           <Route path="/property/:id" element={<PropertyDetail />} />
+          <Route path="/listingagents" element={<AgentListingPage />} />
+          <Route path="/listingagents/:id" element={<AgentDetailsPage />} />
+          <Route path="/about" element={<About />} />
           
+
           
           {/* Protected User Routes */}
           <Route 

@@ -117,15 +117,18 @@ const PropertyFormModal = ({
       return;
     }
 
-    const { lat, lng } = formData.coordinates;
-    if (!lat || !lng || isNaN(lat) || isNaN(lng)) {
-      setFormError('Please select a valid location on the map');
-      return;
-    }
+    // Skip coordinate validation for edits if coordinates are already set
+    if (!isEditing || !formData.coordinates || !formData.coordinates.lat || !formData.coordinates.lng) {
+      const { lat, lng } = formData.coordinates;
+      if (!lat || !lng || isNaN(lat) || isNaN(lng)) {
+        setFormError('Please select a valid location on the map');
+        return;
+      }
 
-    if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-      setFormError('Invalid coordinates: Latitude must be -90 to 90, Longitude -180 to 180');
-      return;
+      if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+        setFormError('Invalid coordinates: Latitude must be -90 to 90, Longitude -180 to 180');
+        return;
+      }
     }
 
     const priceValue = parseFloat(formData.price.replace(/[^0-9.]/g, ''));
@@ -141,8 +144,8 @@ const PropertyFormModal = ({
       features: formData.features 
         ? formData.features.split(',').map(f => f.trim()).filter(Boolean)
         : [],
-      latitude: lat,
-      longitude: lng,
+      latitude: formData.coordinates.lat,
+      longitude: formData.coordinates.lng,
       bedrooms: parseInt(formData.bedrooms) || undefined,
       bathrooms: parseInt(formData.bathrooms) || undefined,
       floorNumber: parseInt(formData.floorNumber) || undefined,
@@ -153,8 +156,12 @@ const PropertyFormModal = ({
 
     delete propertyData.coordinates;
 
+    // Separate new images (Files) and existing images (URLs)
+    const newImages = images.filter(image => image instanceof File);
+    const existingImages = images.filter(image => typeof image === 'string');
+
     try {
-      await onSubmit(propertyData, images);
+      await onSubmit(propertyData, newImages, existingImages);
       if (!isEditing) {
         setImages([]);
         if (fileInputRef.current) fileInputRef.current.value = '';

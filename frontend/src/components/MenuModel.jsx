@@ -51,7 +51,7 @@ export default function MenuModal({ isOpen, onClose, onLoginClick }) {
                     <Link to="/properties" onClick={onClose}>
                       <h1 className="text-4xl lg:text-8xl font-bold leading-none">PROPERTY</h1>
                     </Link>
-                    <Link to="/agents" onClick={onClose}>
+                    <Link to="/listingagents" onClick={onClose}>
                       <h1 className="text-4xl lg:text-8xl font-bold leading-none">AGENTS</h1>
                     </Link>
                     <Link to="/about" onClick={onClose}>

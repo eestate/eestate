@@ -58,8 +58,10 @@ createProperty: builder.mutation({
         const formData = new FormData();
         Object.entries(propertyData).forEach(([key, value]) => {
           if (value !== undefined && value !== null) {
-            if (key === 'coordinates' || key === 'features') {
+            if (key === 'features' || key === 'existingImages') {
               formData.append(key, JSON.stringify(value));
+            } else if (key === 'latitude' || key === 'longitude' || typeof value === 'boolean') {
+              formData.append(key, value.toString());
             } else {
               formData.append(key, value);
             }
@@ -68,6 +70,11 @@ createProperty: builder.mutation({
         images.forEach((image) => {
           formData.append('images', image);
         });
+
+        for (let [key, value] of formData.entries()) {
+          console.log(`FormData: ${key} = ${value}`);
+        }
+
         return {
           url: `/${id}`,
           method: 'PUT',

@@ -28,10 +28,28 @@ const Navbar = () => {
     refetch()
   }, [refetch])
 
-  const handleLogout = async () => {
+const handleLogout = async () => {
+  try {
+    // Optimistic UI update - clear local data immediately
+    localStorage.removeItem('user');
+    
+    // Perform logout API call
     await logout();
-    window.location.href = '/'; 
+    
+    // Soft redirect - no full page reload
+    navigate('/', { replace: true });
+    
+    // Close any open modals
+    setIsLoginOpen(false);
+    setIsMenuOpen(false);
+    
+    toast.success('Logged out successfully');
+  } catch (error) {
+    toast.error('Logout failed');
+    // Restore user data if logout failed
+    if (user) localStorage.setItem('user', JSON.stringify(user));
   }
+};
 
   const handleProfileClick = () => {
     if (isAuthenticated) {

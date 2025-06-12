@@ -115,28 +115,33 @@ export const login = async (req, res, next) => {
 
 export const updateProfile = async (req, res, next) => {
   try {
-    const { gender, phone, name } = req.body; 
-    const user = await User.findById(req.user._id);
+    const { gender, phone, name, profilePic } = req.body; // profilePic is base64 data URI
+    console.log('Update profile request:', { gender, phone, name, hasProfilePic: !!profilePic });
 
+    const user = await User.findById(req.user._id);
     if (!user) {
+      console.log('User not found:', req.user._id);
       return res.status(404).json({ message: 'User not found' });
     }
 
+    // Update fields
     if (gender) user.gender = gender;
     if (phone) user.phone = phone;
-    if (name) user.name = name; 
+    if (name) user.name = name;
 
-    if (req.file) {
+    // Handle profile picture upload
+    if (profilePic && typeof profilePic === 'string' && profilePic.startsWith('data:image/')) {
       try {
-        // Convert buffer to base64 properly
-        const base64Data = req.file.buffer.toString('base64');
-        const dataUri = `data:${req.file.mimetype};base64,${base64Data}`;
-        
-        const uploadResponse = await cloudinary.uploader.upload(dataUri, {
+        console.log('Uploading profile picture to Cloudinary');
+        const uploadResponse = await cloudinary.uploader.upload(profilePic, {
           folder: 'profile_pics',
           format: 'jpg',
+          transformation: [
+            { width: 200, height: 200, crop: 'fill', gravity: 'face' },
+            { quality: 'auto', fetch_format: 'auto' }
+          ]
         });
-        
+        console.log('Profile picture uploaded:', uploadResponse.secure_url);
         user.profilePic = uploadResponse.secure_url;
       } catch (uploadError) {
         console.error('Cloudinary upload error:', uploadError);
@@ -148,7 +153,8 @@ export const updateProfile = async (req, res, next) => {
     }
 
     const updatedUser = await user.save();
-    
+    console.log('Profile updated:', { userId: updatedUser._id, profilePic: updatedUser.profilePic });
+
     res.status(200).json({
       _id: updatedUser._id,
       name: updatedUser.name,
@@ -159,13 +165,16 @@ export const updateProfile = async (req, res, next) => {
       role: updatedUser.role,
     });
   } catch (error) {
-    console.error('Error in updateProfile:', error);
+    console.error('Error in updateProfile:', {
+      message: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
     res.status(500).json({ 
       message: 'Profile update failed',
       error: error.message 
     });
   }
-};  
+};
 
 export const checkAuth = async (req, res) => {
 

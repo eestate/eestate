@@ -146,7 +146,7 @@ const AgentListingPage = () => {
                   <p className="text-sm text-gray-600">{agent.specialization}</p>
                   <p className="text-sm text-gray-500 mb-4">{agent.experience}</p>
                   <Link
-                    to={`/agents/${agent._id}`}
+                    to={`/listingagents/${agent._id}`}
                     className="bg-black text-white px-21 py-1 rounded inline-block"
                   >
                     View Profile

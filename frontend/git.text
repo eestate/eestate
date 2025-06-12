@@ -10,7 +10,9 @@ git log --oneline
 
 git log -- backend/
 
-
+git add .  
+git commit -m "Updated login layout in frontend and text in backend"
+git push origin dev
 
 Initial State (Hidden):
 display: block;: The element is a block-level element, but its dimensions and opacity make it invisible.

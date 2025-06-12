@@ -41,8 +41,8 @@ export const authApi = createApi({
             async onQueryStarted(arg, { dispatch, queryFulfilled }) {
                 try {
                     await queryFulfilled;
-                    dispatch(api.util.resetApiState());
                     localStorage.removeItem('user');
+                    dispatch(api.util.resetApiState());
                 } catch (error) {
                     console.error('Logout failed:', error);
                 }

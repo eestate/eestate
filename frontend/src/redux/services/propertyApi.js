@@ -82,6 +82,10 @@ export const propertyApi = createApi({
           maxPrice: filters.maxPrice || undefined,
           bed: filters.bed || undefined,
           bathMin: filters.bathMin || undefined,
+          maxSqft: filters.maxSqft || undefined,
+  keyword: filters.keyword || undefined,
+  page: filters.page || 1,
+  limit: filters.limit || 9,
         },
       }),
       transformResponse: (response) => ({
