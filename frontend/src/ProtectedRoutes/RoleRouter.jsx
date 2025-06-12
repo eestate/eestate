@@ -1,4 +1,3 @@
-// src/ProtectedRoutes/RoleRouter.jsx
 import { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
@@ -12,25 +11,17 @@ const RoleRouter = () => {
     if (!isLoading && isAuthenticated) {
       const currentPath = location.pathname;
       
+      // Skip if already on correct route
+      if ((role === 'agent' && currentPath.startsWith('/agent')) ||
+          (role === 'admin' && currentPath.startsWith('/admin'))) {
+        return;
+      }
 
-      if (currentPath.includes('login')) return;
-      
-      switch(role) {
-        case 'agent':
-          if (!currentPath.startsWith('/agent')) {
-            navigate('/agent/dashboard');
-          }
-          break;
-        case 'admin':
-          if (!currentPath.startsWith('/admin')) {
-            navigate('/admin/dashboard');
-          }
-          break;
-        default:
-          if (currentPath.startsWith('/agent') || 
-              currentPath.startsWith('/admin')) {
-            navigate('/');
-          }
+      // Redirect to role-specific home
+      if (role === 'agent') {
+        navigate('/agent/dashboard', { replace: true });
+      } else if (role === 'admin') {
+        navigate('/admin/dashboard', { replace: true });
       }
     }
   }, [isAuthenticated, isLoading, role, navigate, location]);

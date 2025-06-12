@@ -104,9 +104,9 @@ export const AgentNavbar = () => {
                     <ChevronDown className="w-4 h-4 text-gray-600" />
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-48" align="end">
-                    <DropdownMenuItem onClick={handleProfileClick}>
+                    {/* <DropdownMenuItem onClick={handleProfileClick}>
                       Profile
-                    </DropdownMenuItem>
+                    </DropdownMenuItem> */}
                     <DropdownMenuItem
                       onClick={handleLogout}
                       disabled={isLoggingOut}

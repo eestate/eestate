@@ -1,6 +1,7 @@
 
 import User from '../models/User.js';
 import { Property } from '../models/Property.js';
+import { uploadToCloudinary } from '../middleware/uploadMiddleware.js';
 
 export const getCurrentUser = (req, res) => {
   res.status(200).json(req.user);
@@ -73,5 +74,30 @@ export const getAgentDetails = async (req, res, next) => {
     });
   } catch (error) {
     next(error);
+  }
+};
+
+export const updateProfile = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { name } = req.body;
+
+    let updatedFields = { name };
+
+    if (req.file) {
+      const result = await uploadToCloudinary(req.file);
+      updatedFields.profilePic = result.secure_url;
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { $set: updatedFields },
+      { new: true }
+    ).select('-password'); // exclude password
+
+    res.status(200).json(updatedUser);
+  } catch (error) {
+    console.error('Update profile error:', error);
+    res.status(500).json({ error: 'Failed to update profile' });
   }
 };

@@ -31,7 +31,7 @@ const PropertyFormModal = ({
       if (image instanceof File) {
         return URL.createObjectURL(image);
       }
-      return image; // For existing images during edit
+      return image;
     });
     setImagePreviews(previews);
 
@@ -61,31 +61,30 @@ const PropertyFormModal = ({
     }
   };
 
-const handleLocationSelect = (locationData) => {
-  setLocation(locationData);
+  const handleLocationSelect = (locationData) => {
+    setLocation(locationData);
 
-  setFormData(prev => ({
-    ...prev,
-    coordinates: {
-      lat: locationData.coordinates[1], // latitude
-      lng: locationData.coordinates[0]  // longitude
-    },
-    address: locationData.fullAddress,
-    state: locationData.state,
-    district: locationData.state_district,
-    village: locationData.village,
-    county: locationData.county,
-    placeName: locationData.placeName
-  }));
-};
+    setFormData(prev => ({
+      ...prev,
+      coordinates: {
+        lat: locationData.coordinates[1],
+        lng: locationData.coordinates[0]
+      },
+      address: locationData.fullAddress,
+      state: locationData.state,
+      district: locationData.state_district,
+      village: locationData.village,
+      county: locationData.county,
+      placeName: locationData.placeName
+    }));
+  };
 
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files);
     
-    // Validate files
     const validFiles = files.filter(file => {
       const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
-      const maxSize = 10 * 1024 * 1024; // 10MB
+      const maxSize = 10 * 1024 * 1024;
       return validTypes.includes(file.type) && file.size <= maxSize;
     });
 
@@ -106,67 +105,71 @@ const handleLocationSelect = (locationData) => {
     setImages(prev => prev.filter((_, i) => i !== index));
   };
 
-const handleFormSubmit = async (e) => {
-  e.preventDefault();
-  setFormError('');
+  const handleFormSubmit = async (e) => {
+    e.preventDefault();
+    setFormError('');
 
-  // Validate required fields
-  const requiredFields = ['name', 'address', 'sqft'];
-  const missingFields = requiredFields.filter(field => !formData[field]);
-  
-  if (missingFields.length) {
-    setFormError(`Please fill in all required fields: ${missingFields.join(', ')}`);
-    return;
-  }
-
-  // Validate coordinates
-  const { lat, lng } = formData.coordinates;
-  if (!lat || !lng || isNaN(lat) || isNaN(lng)) {
-    setFormError('Please select a valid location on the map');
-    return;
-  }
-
-  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-    setFormError('Invalid coordinates: Latitude must be -90 to 90, Longitude -180 to 180');
-    return;
-  }
-
-  const priceValue = parseFloat(formData.price.replace(/[^0-9.]/g, ''));
-  if (isNaN(priceValue) || priceValue <= 0) {
-    setFormError('Please enter a valid price.');
-    return;
-  }
-
-  const propertyData = {
-    ...formData,
-    price: priceValue,
-    sqft: parseInt(formData.sqft) || 0,
-    features: formData.features 
-      ? formData.features.split(',').map(f => f.trim()).filter(Boolean)
-      : [],
-    latitude: lat, // Send as separate fields
-    longitude: lng,
-    bedrooms: parseInt(formData.bedrooms) || undefined,
-    bathrooms: parseInt(formData.bathrooms) || undefined,
-    floorNumber: parseInt(formData.floorNumber) || undefined,
-    totalFloors: parseInt(formData.totalFloors) || undefined,
-    plotArea: parseInt(formData.plotArea) || undefined,
-    totalRooms: parseInt(formData.totalRooms) || undefined,
-  };
-
-  // Remove coordinates object to avoid confusion
-  delete propertyData.coordinates;
-
-  try {
-    await onSubmit(propertyData, images);
-    if (!isEditing) {
-      setImages([]);
-      if (fileInputRef.current) fileInputRef.current.value = '';
+    const requiredFields = ['name', 'address', 'sqft'];
+    const missingFields = requiredFields.filter(field => !formData[field]);
+    
+    if (missingFields.length) {
+      setFormError(`Please fill in all required fields: ${missingFields.join(', ')}`);
+      return;
     }
-  } catch (error) {
-    setFormError(error?.data?.error || 'Failed to submit property. Please try again.');
-  }
-};
+
+    // Skip coordinate validation for edits if coordinates are already set
+    if (!isEditing || !formData.coordinates || !formData.coordinates.lat || !formData.coordinates.lng) {
+      const { lat, lng } = formData.coordinates;
+      if (!lat || !lng || isNaN(lat) || isNaN(lng)) {
+        setFormError('Please select a valid location on the map');
+        return;
+      }
+
+      if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+        setFormError('Invalid coordinates: Latitude must be -90 to 90, Longitude -180 to 180');
+        return;
+      }
+    }
+
+    const priceValue = parseFloat(formData.price.replace(/[^0-9.]/g, ''));
+    if (isNaN(priceValue) || priceValue <= 0) {
+      setFormError('Please enter a valid price.');
+      return;
+    }
+
+    const propertyData = {
+      ...formData,
+      price: priceValue,
+      sqft: parseInt(formData.sqft) || 0,
+      features: formData.features 
+        ? formData.features.split(',').map(f => f.trim()).filter(Boolean)
+        : [],
+      latitude: formData.coordinates.lat,
+      longitude: formData.coordinates.lng,
+      bedrooms: parseInt(formData.bedrooms) || undefined,
+      bathrooms: parseInt(formData.bathrooms) || undefined,
+      floorNumber: parseInt(formData.floorNumber) || undefined,
+      totalFloors: parseInt(formData.totalFloors) || undefined,
+      plotArea: parseInt(formData.plotArea) || undefined,
+      totalRooms: parseInt(formData.totalRooms) || undefined,
+    };
+
+    delete propertyData.coordinates;
+
+    // Separate new images (Files) and existing images (URLs)
+    const newImages = images.filter(image => image instanceof File);
+    const existingImages = images.filter(image => typeof image === 'string');
+
+    try {
+      await onSubmit(propertyData, newImages, existingImages);
+      if (!isEditing) {
+        setImages([]);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+      }
+    } catch (error) {
+      setFormError(error?.data?.error || 'Failed to submit property. Please try again.');
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -217,18 +220,12 @@ const handleFormSubmit = async (e) => {
                 <select
                   name="propertyType"
                   value={formData.propertyType}
-                  onChange={(e) => {
-                    setFormData(prev => ({
-                      ...prev,
-                      propertyType: e.target.value,
-                      subCategory: e.target.value === 'plot' ? formData.plotType : e.target.value,
-                    }));
-                  }}
+                  onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 >
                   <option value="apartment">Apartment</option>
-                  <option value="villa">Villa</option>
+                  <option value="villa">House</option>
                   <option value="plot">Plot</option>
                   <option value="hostel">Hostel</option>
                 </select>
@@ -243,7 +240,6 @@ const handleFormSubmit = async (e) => {
                   value={formData.type}
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
                 >
                   <option value="sale">Sale</option>
                   <option value="rent">Rent</option>
@@ -261,7 +257,7 @@ const handleFormSubmit = async (e) => {
                     name="price"
                     value={formData.price}
                     onChange={handleInputChange}
-                    className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="450,000"
                     required
                   />
@@ -278,7 +274,7 @@ const handleFormSubmit = async (e) => {
                   value={formData.sqft}
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="1200"
+                  placeholder="Enter square footage"
                   min="0"
                   required
                 />
@@ -403,7 +399,7 @@ const handleFormSubmit = async (e) => {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-black text-white py-3 px-4 rounded-md hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+              className="w-full bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
             >
               {isLoading ? (
                 <>

@@ -158,42 +158,133 @@ export const createProperty = async (req, res) => {
 
 export const editProperty = async (req, res) => {
   try {
-    const { propertyId } = req.params;
-    const { propertyType, ...updateData } = req.body;
-    const files = req.files;
+    const { id } = req.params;
+    const { propertyType, latitude, longitude, existingImages, ...updateData } = req.body;
+    const files = req.files || [];
 
-    const property = await Property.findById(propertyId);
+    console.log('Edit request:', { 
+      id, 
+      isValidId: mongoose.isValidObjectId(id), 
+      body: req.body, 
+      files: files.map(f => ({ originalname: f.originalname, mimetype: f.mimetype, size: f.size }))
+    });
+
+    // Validate property ID
+    if (!id) {
+      return res.status(400).json({ 
+        error: "Missing property ID", 
+        details: "No id provided in request parameters" 
+      });
+    }
+
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ 
+        error: "Invalid property ID", 
+        details: `Received ID: ${id}` 
+      });
+    }
+
+    // Check if property exists
+    const property = await Property.findById(id);
     if (!property) {
+      console.log(`Property not found for ID: ${id}`);
       return res.status(404).json({ error: "Property not found" });
     }
 
+    // Check authorization
     if (property.listedBy.toString() !== req.user._id.toString()) {
       return res.status(403).json({ error: "Unauthorized to edit this property" });
     }
 
-    let imageUrls = property.images;
-    if (files && files.length > 0) {
-      if (imageUrls.length > 0) {
-        const deletePromises = imageUrls.map(url => {
-          const publicId = url.split("/").pop().split(".")[0];
-          return cloudinary.uploader.destroy(`properties/${publicId}`);
-        });
-        await Promise.all(deletePromises);
+    // Parse existing images
+    let existingImageUrls = [];
+    if (typeof existingImages === 'string') {
+      try {
+        const parsedImages = JSON.parse(existingImages);
+        existingImageUrls = Array.isArray(parsedImages)
+          ? parsedImages.filter(url => typeof url === 'string' && url.startsWith('https://res.cloudinary.com'))
+          : [];
+      } catch (err) {
+        console.warn('Failed to parse existingImages:', err.message);
       }
+    } else if (Array.isArray(existingImages)) {
+      existingImageUrls = existingImages.filter(url => typeof url === 'string' && url.startsWith('https://res.cloudinary.com'));
+    }
+    console.log('Parsed existingImageUrls:', existingImageUrls);
 
-      const uploadPromises = files.map(file =>
-        cloudinary.uploader.upload(file.path, {
-          folder: "eestate",
-          resource_type: "image",
-        })
-      );
-      const uploadResults = await Promise.all(uploadPromises);
-      imageUrls = uploadResults.map(result => result.secure_url);
+    // Handle location updates (optional)
+    let locationUpdate = {};
+    if (latitude !== undefined && longitude !== undefined) {
+      const lat = parseFloat(latitude);
+      const lng = parseFloat(longitude);
+      if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+        return res.status(400).json({ error: "Invalid coordinates" });
+      }
+      locationUpdate = {
+        location: {
+          type: "Point",
+          coordinates: [lng, lat],
+          state: updateData.state || property.location.state,
+          state_district: updateData.district || property.location.state_district,
+          village: updateData.village || property.location.village,
+          county: updateData.county || property.location.county,
+          placeName: updateData.placeName || property.location.placeName,
+          fullAddress: updateData.address || property.location.fullAddress
+        }
+      };
     }
 
-    const updatedProperty = await Property.findByIdAndUpdate(
-      propertyId,
-      { ...updateData, images: imageUrls },
+    // Handle image updates
+    let imageUrls = [...existingImageUrls];
+    if (files.length > 0) {
+      if (!await checkCloudinaryHealth()) {
+        return res.status(503).json({ error: "Media service unavailable" });
+      }
+      const uploadPromises = files.map(async (file) => {
+        if (!file.buffer) {
+          console.error(`Missing file.buffer for ${file.originalname}`);
+          throw new Error(`Missing file buffer for ${file.originalname}`);
+        }
+        console.log(`Uploading file to Cloudinary: ${file.originalname}`);
+        const result = await uploadToCloudinary(file);
+        console.log(`Uploaded ${file.originalname}: ${result.secure_url}`);
+        return result;
+      });
+      const uploadResults = await Promise.all(uploadPromises);
+      imageUrls = [...imageUrls, ...uploadResults.map(result => result.secure_url)];
+    }
+    console.log('Final imageUrls:', imageUrls);
+
+    // Parse other fields
+    const updatedFields = {
+      ...updateData,
+      price: parseFloat(updateData.price) || property.price,
+      sqft: parseInt(updateData.sqft) || property.sqft,
+      bedrooms: parseInt(updateData.bedrooms) || property.bedrooms,
+      bathrooms: parseInt(updateData.bathrooms) || property.bathrooms,
+      floorNumber: parseInt(updateData.floorNumber) || property.floorNumber,
+      totalFloors: parseInt(updateData.totalFloors) || property.totalFloors,
+      plotArea: parseInt(updateData.plotArea) || property.plotArea,
+      totalRooms: parseInt(updateData.totalRooms) || property.totalRooms,
+      balcony: updateData.balcony === 'true' || updateData.balcony === true,
+      garden: updateData.garden === 'true' || updateData.garden === true,
+      swimmingPool: updateData.swimmingPool === 'true' || updateData.swimmingPool === true,
+      garage: updateData.garage === 'true' || updateData.garage === true,
+      boundaryWall: updateData.boundaryWall === 'true' || updateData.boundaryWall === true,
+      sharedRooms: updateData.sharedRooms === 'true' || updateData.sharedRooms === true,
+      foodIncluded: updateData.foodIncluded === 'true' || updateData.foodIncluded === true,
+      features: typeof updateData.features === 'string'
+        ? JSON.parse(updateData.features || '[]')
+        : Array.isArray(updateData.features) ? updateData.features : property.features,
+      images: imageUrls,
+      ...locationUpdate
+    };
+
+    // Update property
+    const PropertyModel = getModelByType(propertyType || property.propertyType);
+    const updatedProperty = await PropertyModel.findByIdAndUpdate(
+      id,
+      { $set: updatedFields },
       { new: true, runValidators: true }
     );
 
@@ -203,109 +294,73 @@ export const editProperty = async (req, res) => {
       message: "Property updated successfully",
     });
   } catch (error) {
-    return res.status(500).json({ error: error.message || "Server error" });
+    console.error('Edit property error:', {
+      message: error.message,
+      name: error.name,
+      http_code: error.http_code || 500,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+    return res.status(error.http_code || 500).json({ 
+      error: error.message || "Server error",
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 };
 
-// // Delete a property
-// export const deleteProperty = async (req, res) => {
-// // <<<<<<< HEAD
-//   const { propertyId } = req.params; // Ensure propertyId matches the route parameter
-
-//   try {
-//     // Correctly destructure propertyId from req.params
-// // =======
-//     const { propertyId } = req.params;
-
-//   try {
-// // >>>>>>> efde905666920d399ae52d2ee6a202bf587b4b2e
-//     console.log(`Attempting to delete property with ID: ${propertyId}`);
-
-//     // Validate ObjectId
-//     if (!mongoose.isValidObjectId(propertyId)) {
-//       console.log(`Invalid ObjectId: ${propertyId}`);
-//       return res.status(400).json({ error: "Invalid property ID" });
-//     }
-
-//     // Find property
-//     const property = await Property.findById(propertyId);
-//     if (!property) {
-//       console.log(`Property with ID ${propertyId} not found`);
-//       return res.status(404).json({ error: "Property not found" });
-//     }
-
-//     // Check authorization
-//     if (property.listedBy.toString() !== req.user._id.toString()) {
-//       console.log(`User ${req.user._id} unauthorized to delete property ${propertyId}`);
-//       return res.status(403).json({ error: "Unauthorized to delete this property" });
-//     }
-
-//     // Delete images from Cloudinary (with error handling)
-//     if (property.images.length > 0) {
-//       try {
-//         const deletePromises = property.images.map(url => {
-//           const publicId = url.split("/").pop().split(".")[0];
-//           console.log(`Deleting image with publicId: ${publicId}`);
-//           return cloudinary.uploader.destroy(`properties/${publicId}`).catch(err => {
-//             console.warn(`Failed to delete image ${publicId}:`, err);
-//             return null; // Continue even if image deletion fails
-//           });
-//         });
-//         await Promise.all(deletePromises);
-//       } catch (err) {
-//         console.warn("Image deletion failed, proceeding with property deletion:", err);
-//       }
-//     }
-
-//     // Delete property
-//     await Property.findByIdAndDelete(propertyId);
-//     console.log(`Property ${propertyId} deleted successfully`);
-
-//     return res.status(200).json({
-//       success: true,
-//       data: null,
-//       message: "Property deleted successfully",
-//     });
-//   } catch (error) {
-//     console.error(`Error deleting property ${propertyId}:`, error);
-//     return res.status(500).json({ error: error.message || "Server error" });
-//   }
-// };
 export const deleteProperty = async (req, res) => {
-    const { propertyId } = req.params;
-
+  const { id } = req.params; // Changed from propertyId to id
 
   try {
-    console.log(`Attempting to delete property with ID: ${propertyId}`);
+    console.log('Delete request:', { 
+      id, 
+      isValidId: mongoose.isValidObjectId(id) 
+    });
 
     // Validate ObjectId
-    if (!mongoose.isValidObjectId(propertyId)) {
-      console.log(`Invalid ObjectId: ${propertyId}`);
-      return res.status(400).json({ error: "Invalid property ID" });
+    if (!id) {
+      console.log('Missing property ID in request');
+      return res.status(400).json({ error: "Missing property ID" });
     }
 
-    const property = await Property.findById(propertyId);
+    if (!mongoose.isValidObjectId(id)) {
+      console.log(`Invalid ObjectId: ${id}`);
+      return res.status(400).json({ error: "Invalid property ID", details: `Received ID: ${id}` });
+    }
+
+    // Find property
+    const property = await Property.findById(id);
     if (!property) {
-      console.log(`Property with ID ${propertyId} not found`);
+      console.log(`Property with ID ${id} not found`);
       return res.status(404).json({ error: "Property not found" });
     }
 
     // Check authorization
     if (property.listedBy.toString() !== req.user._id.toString()) {
-      console.log(`User ${req.user._id} unauthorized to delete property ${propertyId}`);
+      console.log(`User ${req.user._id} unauthorized to delete property ${id}`);
       return res.status(403).json({ error: "Unauthorized to delete this property" });
     }
 
+    // Delete images from Cloudinary
     if (property.images.length > 0) {
-      const deletePromises = property.images.map(url => {
-        const publicId = url.split("/").pop().split(".")[0];
-        return cloudinary.uploader.destroy(`properties/${publicId}`);
-      });
-      await Promise.all(deletePromises);
+      try {
+        const deletePromises = property.images.map(url => {
+          // Extract publicId from Cloudinary URL (e.g., eestate_properties/image_id)
+          const publicId = url.split('/').slice(-2).join('/').split('.')[0];
+          console.log(`Deleting image with publicId: ${publicId}`);
+          return cloudinary.uploader.destroy(publicId).catch(err => {
+            console.warn(`Failed to delete image ${publicId}:`, err);
+            return null;
+          });
+        });
+        await Promise.all(deletePromises);
+      } catch (err) {
+        console.warn("Image deletion failed, proceeding with property deletion:", err);
+      }
     }
 
-    await Property.findByIdAndDelete(propertyId);
-    console.log(`Property ${propertyId} deleted successfully`);
+    // Delete property
+    await Property.findByIdAndDelete(id);
+    console.log(`Property ${id} deleted successfully`);
 
     return res.status(200).json({
       success: true,
@@ -313,11 +368,17 @@ export const deleteProperty = async (req, res) => {
       message: "Property deleted successfully",
     });
   } catch (error) {
-    console.error(`Error deleting property ${propertyId}:`, error);
-    return res.status(500).json({ error: error.message || "Server error" });
+    console.error(`Error deleting property ${id}:`, {
+      message: error.message,
+      name: error.name,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+    return res.status(500).json({ 
+      error: error.message || "Server error",
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
-}
-
+};
 
 export const getMyProperties = async (req, res, next) => {
   try {

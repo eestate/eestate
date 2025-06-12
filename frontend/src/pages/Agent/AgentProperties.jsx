@@ -1,15 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useGetMyPropertiesQuery, useCreatePropertyMutation, useEditPropertyMutation, useDeletePropertyMutation } from '@/redux/services/AgentApi';
-// import PropertyList from './PropertyList';
-// import PropertyDetailsModal from './PropertyDetailsModal';
-// import DeleteConfirmModal from './DeleteConfirmModal';
-// import PropertyFormModal from './PropertyFormModal';
 import { useCheckAuthQuery } from '@/redux/services/authApi';
 import PropertyList from '@/components/agent/PropertyList';
 import PropertyDetailsModal from '@/components/agent/PropertyDetailsModal';
 import DeleteConfirmModal from '@/components/agent/DeleteConfirmModal';
 import PropertyFormModal from '@/components/agent/PropertyFormModal';
-// import { useGetMyPropertiesQuery } from '@/redux/services/AgentApi';
 
 const AgentProperties = () => {
   const { data: authData, isLoading: authLoading } = useCheckAuthQuery();
@@ -18,7 +13,7 @@ const AgentProperties = () => {
   });
   const [createProperty, { isLoading: createLoading, error: createError, isSuccess: createSuccess }] = useCreatePropertyMutation();
   const [editProperty, { isLoading: editLoading, error: editError, isSuccess: editSuccess }] = useEditPropertyMutation();
-  const [deleteProperty, { isLoading: deleteLoading}] = useDeletePropertyMutation();
+  const [deleteProperty, { isLoading: deleteLoading, error: deleteError }] = useDeletePropertyMutation();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
@@ -34,7 +29,6 @@ const AgentProperties = () => {
     description: '',
     features: '',
     type: 'sale',
-    subCategory: 'apartment',
     coordinates: { lat: 0, lng: 0 },
     bedrooms: '',
     bathrooms: '',
@@ -57,10 +51,10 @@ const AgentProperties = () => {
   const fileInputRef = useRef(null);
 
   const closeModal = () => {
-  setIsModalOpen(false);
-  resetFormData();
-  setSelectedProperty(null);
-};
+    setIsModalOpen(false);
+    resetFormData();
+    setSelectedProperty(null);
+  };
 
   useEffect(() => {
     if (createSuccess || editSuccess) {
@@ -88,7 +82,6 @@ const AgentProperties = () => {
       description: '',
       features: '',
       type: 'sale',
-      subCategory: 'apartment',
       coordinates: { lat: 0, lng: 0 },
       bedrooms: '',
       bathrooms: '',
@@ -113,11 +106,24 @@ const AgentProperties = () => {
   };
 
   const handlePropertyClick = (property) => {
+    if (!property?._id || !/^[0-9a-fA-F]{24}$/.test(property._id)) {
+      console.error('Invalid property ID in handlePropertyClick:', property._id);
+      setFormError('Invalid property selected. Please try again.');
+      return;
+    }
+    console.log('Selected property ID:', property._id);
     setSelectedProperty(property);
     setIsDetailsModalOpen(true);
   };
 
   const handleEdit = () => {
+    if (!selectedProperty?._id || !/^[0-9a-fA-F]{24}$/.test(selectedProperty._id)) {
+      console.error('Invalid property ID in handleEdit:', selectedProperty?._id);
+      setFormError('Cannot edit: Invalid property ID.');
+      return;
+    }
+    console.log('Editing property ID:', selectedProperty._id);
+
     setFormData({
       name: selectedProperty.name || '',
       propertyType: selectedProperty.propertyType || 'apartment',
@@ -125,26 +131,27 @@ const AgentProperties = () => {
       price: selectedProperty.price ? `$${selectedProperty.price.toLocaleString()}` : '',
       sqft: selectedProperty.sqft || '',
       description: selectedProperty.description || '',
-      features: selectedProperty.features?.join(', ') || '',
+      features: Array.isArray(selectedProperty.features) ? selectedProperty.features.join(', ') : '',
       type: selectedProperty.type || 'sale',
-      subCategory: selectedProperty.subCategory || 'apartment',
-      coordinates: selectedProperty.coordinates || { lat: 0, lng: 0 },
+      coordinates: selectedProperty.location?.coordinates 
+        ? { lat: selectedProperty.location.coordinates[1], lng: selectedProperty.location.coordinates[0] } 
+        : { lat: 0, lng: 0 },
       bedrooms: selectedProperty.bedrooms || '',
       bathrooms: selectedProperty.bathrooms || '',
       floorNumber: selectedProperty.floorNumber || '',
       totalFloors: selectedProperty.totalFloors || '',
-      balcony: selectedProperty.balcony || false,
+      balcony: !!selectedProperty.balcony,
       plotArea: selectedProperty.plotArea || '',
-      garden: selectedProperty.garden || false,
-      swimmingPool: selectedProperty.swimmingPool || false,
-      garage: selectedProperty.garage || false,
+      garden: !!selectedProperty.garden,
+      swimmingPool: !!selectedProperty.swimmingPool,
+      garage: !!selectedProperty.garage,
       plotType: selectedProperty.plotType || 'residential',
-      boundaryWall: selectedProperty.boundaryWall || false,
+      boundaryWall: !!selectedProperty.boundaryWall,
       totalRooms: selectedProperty.totalRooms || '',
-      sharedRooms: selectedProperty.sharedRooms || false,
-      foodIncluded: selectedProperty.foodIncluded || false,
+      sharedRooms: !!selectedProperty.sharedRooms,
+      foodIncluded: !!selectedProperty.foodIncluded,
     });
-    setImages([]);
+    setImages(Array.isArray(selectedProperty.images) ? selectedProperty.images : []);
     setIsDetailsModalOpen(false);
     setIsModalOpen(true);
   };
@@ -153,34 +160,32 @@ const AgentProperties = () => {
     setIsDeleteConfirmOpen(true);
   };
 
-  const confirmDelete = async () => {
-    try {
-      console.log(`Deleting property with ID: ${selectedProperty._id}`);
-      if (!selectedProperty._id || !/^[0-9a-fA-F]{24}$/.test(selectedProperty._id)) {
-        console.error("Invalid property ID:", selectedProperty._id);
-        setFormError("Invalid property ID.");
-        return;
-      }
-      await deleteProperty(selectedProperty._id).unwrap();
-      setIsDetailsModalOpen(false);
-      setIsDeleteConfirmOpen(false);
-      setSelectedProperty(null);
-      setSuccessMessage("Property deleted successfully!");
-      setTimeout(() => setSuccessMessage(""), 3000);
-    } catch (err) {
-      console.error("Delete error:", {
-        status: err.status,
-        data: err.data,
-        message: err.message,
-      });
-      // Handle PARSING_ERROR specifically
-      const errorMessage =
-        err.status === "PARSING_ERROR"
-          ? "Server returned an unexpected response. Please check the server logs."
-          : err.data?.error || err.message || "Failed to delete property. Please try again.";
-      setFormError(errorMessage);
+const confirmDelete = async () => {
+  try {
+    if (!selectedProperty?._id || !/^[0-9a-fA-F]{24}$/.test(selectedProperty._id)) {
+      throw new Error(`Invalid property ID: ${selectedProperty?._id}`);
     }
-  };
+    const deleteUrl = `http://localhost:3003/api/agent/${selectedProperty._id}`;
+    console.log('Submitting delete for property ID:', selectedProperty._id, 'URL:', deleteUrl);
+    await deleteProperty(selectedProperty._id).unwrap();
+    setIsDetailsModalOpen(false);
+    setIsDeleteConfirmOpen(false);
+    setSelectedProperty(null);
+    setSuccessMessage('Property deleted successfully!');
+    setTimeout(() => setSuccessMessage(''), 3000);
+  } catch (err) {
+    console.error('Delete error:', {
+      message: err.message,
+      data: err.data,
+      status: err.status,
+      id: selectedProperty?._id,
+      response: err,
+      url: `http://localhost:3003/api/agent/${selectedProperty?._id}`
+    });
+    const errorMessage = err?.data?.error || err?.data?.details || err.message || 'Failed to delete property. Please try again.';
+    setFormError(errorMessage);
+  }
+};
 
   if (authLoading || propertiesLoading) {
     return <div className="p-6 bg-gray-50">Loading...</div>;
@@ -224,30 +229,59 @@ const AgentProperties = () => {
         onConfirm={confirmDelete}
         isLoading={deleteLoading}
       />
-      <PropertyFormModal
-        isOpen={isModalOpen}
-        onClose={closeModal}
-        formData={formData}
-        setFormData={setFormData}
-        images={images}
-        setImages={setImages}
-        fileInputRef={fileInputRef}
-        formError={formError}
-        setFormError={setFormError}
-        isLoading={createLoading || editLoading}
-        onSubmit={async (propertyData, images) => {
-          try {
-            if (selectedProperty) {
-              await editProperty({ id: selectedProperty._id, propertyData, images }).unwrap();
-            } else {
-              await createProperty({ propertyData, images }).unwrap();
-            }
-          } catch (err) {
-            setFormError(err?.data?.error || 'An error occurred. Please try again.');
-          }
-        }}
-        isEditing={!!selectedProperty}
-      />
+<PropertyFormModal
+  isOpen={isModalOpen}
+  onClose={closeModal}
+  formData={formData}
+  setFormData={setFormData}
+  images={images}
+  setImages={setImages}
+  fileInputRef={fileInputRef}
+  formError={formError}
+  setFormError={setFormError}
+  isLoading={createLoading || editLoading}
+  onSubmit={async (propertyData, newImages, existingImages) => {
+    try {
+      if (selectedProperty) {
+        if (!selectedProperty._id || !/^[0-9a-fA-F]{24}$/.test(selectedProperty._id)) {
+          throw new Error(`Invalid property ID: ${selectedProperty._id}`);
+        }
+        const editUrl = `http://localhost:3003/api/agent/${selectedProperty._id}`;
+        console.log('Submitting edit for property ID:', selectedProperty._id, 'URL:', editUrl);
+        console.log('New images:', newImages.map(img => ({
+          name: img.name,
+          size: img.size,
+          type: img.type
+        })));
+        await editProperty({
+          id: selectedProperty._id,
+          propertyData: { ...propertyData, existingImages },
+          images: newImages
+        }).unwrap();
+      } else {
+        console.log('Submitting new property creation');
+        console.log('New images:', newImages.map(img => ({
+          name: img.name,
+          size: img.size,
+          type: img.type
+        })));
+        await createProperty({ propertyData, images: newImages }).unwrap();
+      }
+      setSuccessMessage(`Property ${selectedProperty ? 'edited' : 'created'} successfully!`);
+    } catch (err) {
+      console.error('Submit error:', {
+        message: err.message,
+        data: err.data,
+        status: err.status,
+        id: selectedProperty?._id,
+        response: err,
+        url: `http://localhost:3003/api/agent/${selectedProperty?._id}`
+      });
+      setFormError(err?.data?.error || err?.data?.details || err.message || 'Failed to update property. Please try again.');
+    }
+  }}
+  isEditing={!!selectedProperty}
+/>
     </div>
   );
 };
