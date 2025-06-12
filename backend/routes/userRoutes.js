@@ -4,6 +4,8 @@ import { getCurrentUser } from '../controllers/userController.js';
 import { protect } from '../middleware/authMiddleware.js';
 import { getWishlist,addToWishlist,removeFromWishlist } from '../controllers/propertyController.js';
 import { updateProfile } from '../controllers/authController.js';
+import { getAgentDetails,getAllAgents } from '../controllers/userController.js';
+
 const router = express.Router();
 
 
@@ -17,5 +19,7 @@ router.get('/wishlist', protect, getWishlist);
 router.post('/wishlist/:propertyId', protect, addToWishlist);
 router.delete('/wishlist/:propertyId', protect, removeFromWishlist);
 
+router.get('/agents', getAllAgents);
+router.get('/agents/:id', getAgentDetails);
 
 export default router;

@@ -81,18 +81,22 @@ createProperty: builder.mutation({
           console.log(`Sending DELETE request for property ID: ${id}`);
           return {
             url: `/${id}`,
-            method: 'DELETE',
+            method: "DELETE",
           };
         },
         async onQueryStarted(id, { dispatch, queryFulfilled }) {
           try {
             await queryFulfilled;
-            dispatch(agentApi.util.invalidateTags(['Properties']));
+            dispatch(agentApi.util.invalidateTags(["Properties", "AgentStats"]));
           } catch (error) {
-            console.error('Delete failed:', error);
+            console.error("Delete failed:", {
+              status: error.status,
+              data: error.data,
+              message: error.message,
+            });
           }
         },
-        invalidatesTags: ['Properties', 'AgentStats'],
+        invalidatesTags: ["Properties", "AgentStats"],
       }),
   }),
 });

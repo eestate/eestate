@@ -10,7 +10,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { toast } from "sonner";
+// import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import AuthModal from "../AuthModal";
 import { useEffect } from "react";
@@ -18,7 +18,7 @@ import { useEffect } from "react";
 export const AgentNavbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  // const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const { user, isAuthenticated, isLoading, logout, isLoggingOut, refetch } = useAuth();
 

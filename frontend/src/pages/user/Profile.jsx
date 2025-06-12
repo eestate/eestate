@@ -11,7 +11,7 @@ import PropertyCard from '@/components/PropertyCard';
 
 const Profile = () => {
   const navigate = useNavigate();
-  const user = JSON.parse(localStorage.getItem('user')); 
+  const user = JSON.parse(localStorage.getItem('user'));
 
   if (!user) {
     return (
@@ -90,14 +90,14 @@ const Profile = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 text-gray-900 font-sans">
+    <div className="min-h-screen bg-gray-100 text-gray-900 font-sans  ">
       {/* Hero Section */}
-      <section className="bg-gray-900 text-white py-16">
+      {/* <section className="bg-gray-900 text-white py-16">
         <div className="container mx-auto px-4 text-center">
           <h1 className="text-3xl md:text-4xl font-bold">Your Profile</h1>
           <p className="text-lg mt-2">Manage your details and view your wishlist</p>
         </div>
-      </section>
+      </section> */}
 
       {/* Profile Section */}
       <section className="py-16 bg-white">
@@ -217,7 +217,7 @@ const Profile = () => {
         </div>
       </section>
 
-    <section className="py-16 bg-gray-100">
+      <section className="py-16 bg-gray-100">
         <div className="container mx-auto px-4">
           <h2 className="text-2xl font-bold text-gray-900 mb-8 text-center">Your Wishlist</h2>
           {wishlistLoading ? (
@@ -248,7 +248,7 @@ const Profile = () => {
                     disabled={removingFromWishlist}
                     className="absolute top-2 left-2 bg-white p-2 rounded-full shadow-md hover:bg-red-50 text-red-600 hover:text-red-800"
                     title="Remove from wishlist"
-                  > 
+                  >
                     <Trash className="w-4 h-4" />
                   </button>
                 </div>
@@ -257,6 +257,19 @@ const Profile = () => {
           )}
         </div>
       </section>
+
+
+
+      {/* Bookings */}
+      <section className="py-16 bg-gray-100 border-t">
+        <div className="container mx-auto px-4">
+          <h2 className="text-2xl font-bold text-gray-900 mb-8 text-center">Your Bookings</h2>
+
+        </div>
+      </section>
+
+
+
     </div>
   );
 };

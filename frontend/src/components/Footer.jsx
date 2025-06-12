@@ -1,61 +1,130 @@
-import React from 'react'
-import { Link } from 'react-router-dom'
+import { Link } from "react-router-dom";
 import {
-  MenuIcon,
   FacebookIcon,
   InstagramIcon,
   TwitterIcon,
-} from 'lucide-react'
+} from "lucide-react";
 
-const Footer = () => {
+function Footer() {
   return (
-    <div>
-        <footer className="bg-black text-white py-8 px-6">
-        <div className="container mx-auto">
-          <div className="flex flex-col md:flex-row justify-between">
-            <div className="mb-6 md:mb-0">
-              <ul className="space-y-2">
-                <li>
-                  <Link to="/">Home</Link>
-                </li>
-                <li>
-                  <Link to="/about">About</Link>
-                </li>
-                <li>
-                  <Link to="/properties">Property</Link>
-                </li>
-                <li>
-                  <Link to="/contact">Contact us</Link>
-                </li>
-              </ul>
-            </div>
-            <div className="mb-6 md:mb-0">
-              <ul className="space-y-2">
-                <li>
-                  <Link to="/terms">Terms & Conditions</Link>
-                </li>
-                <li>
-                  <Link to="/privacy">Privacy Policy</Link>
-                </li>
-                <li>
-                  <Link to="/help">Help Center</Link>
-                </li>
-              </ul>
-            </div>
-            <div className="flex flex-col items-start md:items-end">
-              <div className="flex gap-4 mb-6">
-                <FacebookIcon size={24} />
-                <InstagramIcon size={24} />
-                <TwitterIcon size={24} />
-              </div>
-              <div className="text-4xl font-light mb-4">eestate</div>
-              <p className="text-sm">© 2025 eestate. All rights reserved</p>
-            </div>
-          </div>
+    <footer className="w-full bg-black text-white flex flex-col justify-between px-6 py-10 sm:py-12 md:py-16 pb-0">
+      {/* Top Section */}
+      <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-10 md:gap-0">
+        {/* Left content */}
+        <div className="w-full md:w-1/3 flex flex-col sm:flex-row justify-center md:justify-start gap-10 md:gap-16">
+          {/* Navigation Links */}
+          <ul className="space-y-3 text-center sm:text-left border-b border-gray-700 sm:border-none pb-4 sm:pb-0">
+            <li>
+              <Link
+                to="/"
+                className="font-manrope font-semibold text-sm sm:text-base hover:underline transition"
+              >
+                Home
+              </Link>
+            </li>
+            <li>
+              <Link
+                to="/about"
+                className="font-manrope font-semibold text-sm sm:text-base hover:underline transition"
+              >
+                About
+              </Link>
+            </li>
+            <li>
+              <Link
+                to="/properties"
+                className="font-manrope font-semibold text-sm sm:text-base hover:underline transition"
+              >
+                Property
+              </Link>
+            </li>
+            <li>
+              <Link
+                to="/contact"
+                className="font-manrope font-semibold text-sm sm:text-base hover:underline transition"
+              >
+                Contact us
+              </Link>
+            </li>
+          </ul>
+
+          {/* Policy Links */}
+          <ul className="space-y-3 text-center sm:text-left border-b border-gray-700 sm:border-none pb-4 sm:pb-0">
+            <li>
+              <Link
+                to="/terms"
+                className="font-manrope font-semibold text-sm sm:text-base hover:underline transition"
+              >
+                Terms & Conditions
+              </Link>
+            </li>
+            <li>
+              <Link
+                to="/privacy"
+                className="font-manrope font-semibold text-sm sm:text-base hover:underline transition"
+              >
+                Privacy Policy
+              </Link>
+            </li>
+            <li>
+              <Link
+                to="/help"
+                className="font-manrope font-semibold text-sm sm:text-base hover:underline transition"
+              >
+                Help Center
+              </Link>
+            </li>
+          </ul>
         </div>
-      </footer>
-    </div>
-  )
+
+        {/* Right content */}
+        <div className="w-full md:w-2/3 flex flex-col items-center md:items-end">
+          {/* Social icons */}
+          <div className="flex gap-5 mb-4">
+            <a
+              href="https://facebook.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Facebook"
+              className="bg-white rounded-lg p-3 hover:opacity-80 transition"
+            >
+              <FacebookIcon size={24} className="text-black" />
+            </a>
+            <a
+              href="https://instagram.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Instagram"
+              className="bg-white rounded-lg p-3 hover:opacity-80 transition"
+            >
+              <InstagramIcon size={24} className="text-black" />
+            </a>
+            <a
+              href="https://twitter.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Twitter"
+              className="bg-white rounded-lg p-3 hover:opacity-80 transition"
+            >
+              <TwitterIcon size={24} className="text-black" />
+            </a>
+          </div>
+
+          {/* Brand text */}
+          <p className="text-5xl sm:text-7xl md:text-[100px] font-manrope font-light tracking-wide text-white select-none text-center md:text-right">
+            eestate
+          </p>
+        </div>
+      </div>
+
+      {/* Bottom Section */}
+      {/* <div className="text-center mt-10 border-t border-gray-800 pt-4"> */}
+      <p className="font-extralight text-sm sm:text-base font-manrope text-gray-400 select-none text-center">
+        © 2025 eestate. All rights reserved
+      </p>
+      {/* </div> */}
+    </footer>
+  );
 }
 
-export default Footer
+export default Footer;

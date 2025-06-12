@@ -18,7 +18,7 @@ const AgentProperties = () => {
   });
   const [createProperty, { isLoading: createLoading, error: createError, isSuccess: createSuccess }] = useCreatePropertyMutation();
   const [editProperty, { isLoading: editLoading, error: editError, isSuccess: editSuccess }] = useEditPropertyMutation();
-  const [deleteProperty, { isLoading: deleteLoading, error: deleteError }] = useDeletePropertyMutation();
+  const [deleteProperty, { isLoading: deleteLoading}] = useDeletePropertyMutation();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
@@ -153,15 +153,29 @@ const AgentProperties = () => {
   const confirmDelete = async () => {
     try {
       console.log(`Deleting property with ID: ${selectedProperty._id}`);
+      if (!selectedProperty._id || !/^[0-9a-fA-F]{24}$/.test(selectedProperty._id)) {
+        console.error("Invalid property ID:", selectedProperty._id);
+        setFormError("Invalid property ID.");
+        return;
+      }
       await deleteProperty(selectedProperty._id).unwrap();
       setIsDetailsModalOpen(false);
       setIsDeleteConfirmOpen(false);
       setSelectedProperty(null);
-      setSuccessMessage('Property deleted successfully!');
-      setTimeout(() => setSuccessMessage(''), 3000);
+      setSuccessMessage("Property deleted successfully!");
+      setTimeout(() => setSuccessMessage(""), 3000);
     } catch (err) {
-      console.error('Delete error:', err);
-      setFormError(err?.data?.error || 'Failed to delete property.');
+      console.error("Delete error:", {
+        status: err.status,
+        data: err.data,
+        message: err.message,
+      });
+      // Handle PARSING_ERROR specifically
+      const errorMessage =
+        err.status === "PARSING_ERROR"
+          ? "Server returned an unexpected response. Please check the server logs."
+          : err.data?.error || err.message || "Failed to delete property. Please try again.";
+      setFormError(errorMessage);
     }
   };
 
