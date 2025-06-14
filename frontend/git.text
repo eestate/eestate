@@ -14,6 +14,92 @@ git add .
 git commit -m "Updated login layout in frontend and text in backend"
 git push origin dev
 
+-------------------------------------------------------------------------------------------------------------------------
+ Initial Setup (For first time)
+
+git clone https://github.com/YOUR-Username/your-repo.git
+cd your-repo
+
+git remote add upstream https://github.com/original-owner/your-repo.git
+
+git remote -v
+
+
+🔹🚀 2️⃣ Daily Workflows (How to stay up to date and contribute smoothly)
+
+A. Before starting a new task:
+
+A. Before starting a new task:
+
+1.Update your main first:
+
+git checkout main
+git fetch upstream
+git merge upstream/main
+git push origin main  # (optional, to keep your GitHub in sync)
+
+
+2. Create a new branch for your task:
+
+git checkout -b feature/my-task-name
+
+
+B. After adding or changing files:
+
+1.See what you changed:
+
+git status
+git diff
+
+
+2.Stage files:
+
+git add .
+
+3.Commit:
+
+git commit -m "Add a clear, brief message"
+
+
+C. Push to your own GitHub (your origin):
+
+git push origin feature/my-task-name
+
+
+D. Open a Pull Request (PR) from GitHub UI:
+
+  :Push your branch first.
+  :GitHub will show a button: “Compare & pull request”
+  :Provide a clear title and description.
+  :Select base = main (original) and compare = your branch.
+
+
+🔹🚀 3️⃣ After Merging:
+
+➥ Once your pull request is merged into main by your team, you should:
+
+1.Update your local main again:
+
+git checkout main
+git fetch upstream
+git merge upstream/main
+
+2.Push back to your own GitHub:
+
+git push origin main
+
+➥ Now you’re up to date again.
+
+
+🔹🚀 Summary — Best Practices:
+
+✅ Always pull upstream first to avoid conflict.
+✅ Work on separate branches for each new feature or bug.
+✅ Make small, clear commits.
+✅ Open pull requests to propose your change.
+✅ Resolve conflicts promptly.
+
+------------------------------------------------------------------------------------------------------------------------------------
 Initial State (Hidden):
 display: block;: The element is a block-level element, but its dimensions and opacity make it invisible.
 position: fixed;: This is crucial. position: fixed takes the element out of the normal document flow and positions it relative to the viewport. This allows it to stay in a fixed position even when the user scrolls.

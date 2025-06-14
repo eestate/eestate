@@ -18,6 +18,12 @@ import AdminUserManagement from './pages/admin/AdminuserManagement'
 import AdminProperty from './pages/admin/AdminProperty'
 import AdminSubscription from './pages/admin/AdminSubctription'
 import AdminBooking from './pages/admin/AdminBooking'
+import { AuthStateChecker } from './components/AuthStateChecker'
+import RoleRouter from './ProtectedRoutes/RoleRouter'
+import AgentListingPage from './pages/AgentListing'
+import AgentDetailsPage from './pages/AgentDetails'
+import About from './pages/About'
+import { ProtectedRoute } from './ProtectedRoutes/ProtectedRoute'
 
 const App = () => {
   const location = useLocation()
