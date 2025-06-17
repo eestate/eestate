@@ -6,6 +6,9 @@ import {
 
 const AdminProperty = () => {
   const [selectedProperty, setSelectedProperty] = useState(null);
+  const [showStatusDropdown, setShowStatusDropdown] = useState(false);
+  const [selectedStatus, setSelectedStatus] = useState('All Status');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const properties = [
     { 
@@ -23,7 +26,7 @@ const AdminProperty = () => {
       details: "$850,000 • 2 beds • 2 baths",
       location: "Austin, TX", 
       agent: "Sarah Johnson", 
-      status: "Pending", 
+      status: "Sold", 
       submitted: "5 hours ago",
       statusColor: "yellow",
       description: "Sleek downtown apartment with modern amenities, open floor plan, and city views. Perfect for urban professionals."
@@ -50,6 +53,16 @@ const AdminProperty = () => {
     },
   ];
 
+  const statusOptions = ['All Status', 'Available', 'Sold'];
+
+  const filteredProperties = properties
+    .filter(property => selectedStatus === 'All Status' || property.status === selectedStatus)
+    .filter(property => 
+      property.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      property.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      property.agent.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
   const openDetails = (property) => {
     setSelectedProperty(property);
   };
@@ -58,14 +71,53 @@ const AdminProperty = () => {
     setSelectedProperty(null);
   };
 
+  const handleStatusFilterSelect = (status) => {
+    setSelectedStatus(status);
+    setShowStatusDropdown(false);
+  };
+
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
+  };
+
   return (
     <div className="p-6 min-h-screen bg-gray-100">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-semibold">Property Moderation</h1>
-        <button className="flex items-center space-x-2 px-4 py-2 border rounded-lg">
-          <Filter size={16} />
-          <span>All Status</span>
-        </button>
+        <div className="flex items-center space-x-4">
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Search by name, location, or agent..."
+              value={searchQuery}
+              onChange={handleSearchChange}
+              className="pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+          </div>
+          <div className="relative">
+            <button 
+              className="flex items-center space-x-2 px-4 py-2 border rounded-lg"
+              onClick={() => setShowStatusDropdown(!showStatusDropdown)}
+            >
+              <Filter size={16} />
+              <span>{selectedStatus}</span>
+            </button>
+            {showStatusDropdown && (
+              <div className="absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-lg z-10">
+                {statusOptions.map((status, index) => (
+                  <button 
+                    key={index}
+                    className="w-full text-left px-4 py-2 hover:bg-gray-100"
+                    onClick={() => handleStatusFilterSelect(status)}
+                  >
+                    {status}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
       
       <div className="bg-white rounded-lg shadow-sm border">
@@ -82,7 +134,7 @@ const AdminProperty = () => {
               </tr>
             </thead>
             <tbody>
-              {properties.map((property, index) => (
+              {filteredProperties.map((property, index) => (
                 <tr key={index} className="border-b hover:bg-gray-50">
                   <td className="p-4">
                     <div className="flex items-center space-x-3">
@@ -109,7 +161,7 @@ const AdminProperty = () => {
                       onClick={() => openDetails(property)}
                     >
                       <Eye size={16} />
-                    </button>
+                      </button>
                   </td>
                 </tr>
               ))}
@@ -150,7 +202,9 @@ const AdminProperty = () => {
               <div className="col-span-2">
                 <p className="text-sm text-gray-500">Status</p>
                 <p className="flex items-center space-x-2">
-                  <CheckCircle size={16} className="text-green-500" />
+                  <CheckCircle size={16} className={`${
+                    selectedProperty.statusColor === 'green' ? 'text-green-500' : 'text-yellow-500'
+                  }`} />
                   <span className="font-medium">{selectedProperty.status}</span>
                 </p>
               </div>

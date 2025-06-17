@@ -1,0 +1,146 @@
+import mongoose from "mongoose";
+import User from "../models/User.js";
+import { Property } from "../models/Property.js";
+import subPlan from "../models/Subscription.js";
+
+export const getAllUser = async (req, res) => {
+  const allUsers = await User.find();
+  res.status(201).json({ message: "all users fetched", data: allUsers });
+};
+
+export const userDetails = async (req, res) => {
+  const { userId } = req.params;
+  console.log("user id", userId);
+
+  if (!mongoose.isValidObjectId(userId)) {
+    return res.status(400).json({ message: "Invalid ObjectId" });
+  }
+  const currentUser = await User.findById(userId).populate("wishlist");
+
+  if (!currentUser) {
+    return res.status(404).json({ message: "User Not Found" });
+  }
+
+  res.status(201).json({ message: "User details", data: currentUser });
+};
+
+export const agentDetails = async (req, res) => {
+  const { agentId } = req.params;
+  console.log("agent id", agentId);
+
+  if (!mongoose.isValidObjectId(agentId)) {
+    return res.status(400).json({ message: "Invalid ObjectId" });
+  }
+  const currentAgent = await User.findById(agentId);
+
+  if (!currentAgent) {
+    return res.status(404).json({ message: "agent Not Found" });
+  }
+
+  const agentProperties = await Property.find({ agentId });
+
+  res.status(200).json({
+    message: "Agent details and properties fetched successfully",
+    agent: currentAgent,
+    properties: agentProperties,
+  });
+};
+
+export const BlockAndUnblock = async (req, res) => {
+  const { id, action } = req.body;
+
+  console.log("action 1", action);
+
+  if (!mongoose.isValidObjectId(id)) {
+    return res.status(400).json({ message: "Invalid ObjectId" });
+  }
+
+  const currentUser = await User.findById(id);
+
+  if (!currentUser) {
+    return res.status(404).json({ message: "User Not Found" });
+  }
+
+  if (action === "Block") {
+    currentUser.isBlocked = true;
+  } else if (action === "Unblock") {
+    currentUser.isBlocked = false;
+  } else {
+    return res.status(404).json({ message: "Invalid action" });
+  }
+
+  await currentUser.save();
+
+  console.log("user id", id);
+  console.log("action", action);
+  res.status(201).json({
+    message: `current user is ${action} and ${currentUser.isBlocked}`,
+    data: currentUser,
+  });
+};
+
+export const addSubscription = async (req, res) => {
+  const { planName, amount, period, features, color } = req.body;
+
+  // console.log('plan details',req.body);
+
+  const planExist = await subPlan.findOne({ planName });
+
+  if (planExist) {
+    return res.status(400).json({ message: "Plan already exist" });
+  }
+
+  const newPlan = new subPlan({
+    planName,
+    amount,
+    period,
+    features,
+    color,
+  });
+
+  const plan = await newPlan.save();
+
+  console.log("Plan created", plan);
+  res.status(201).json({ message: "Plqan Created", data: plan });
+};
+
+export const allSubscriptionPlans = async (req, res) => {
+  const allSubscriptions = await subPlan.find();
+  if (!allSubscriptions) {
+    return res.status(404).json({ message: "Subscription Plans Not Found" });
+  }
+  return res
+    .status(201)
+    .json({ message: "All Subscriptions", data: allSubscriptions });
+};
+
+
+export const editSubscription = async (req, res) => {
+  const { planId } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(planId)) {
+    return res.status(404).json({ message: "Invalid Plan Id" });
+  }
+
+  console.log('req.body',req.body);
+
+  const planExist = await subPlan.findById(planId);
+
+  if (!planExist) {
+    return res.staus(404).json({ message: "Plan Not Found" });
+  }
+
+  const updatedPlan = await subPlan.findByIdAndUpdate(
+    planId,
+    { $set: req.body },
+    { new: true, runValidators: true }
+  );
+
+  if (!updatedPlan) {
+    return res.status(404).json({ message: "Plan Not Found" });
+  }
+
+  res
+    .status(200)
+    .json({ message: "Subscription Plan Updated", data: updatedPlan });
+};

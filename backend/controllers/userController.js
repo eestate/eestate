@@ -48,7 +48,7 @@ export const getAgentDetails = async (req, res, next) => {
       return res.status(404).json({ message: 'Agent not found or not active' });
     }
 
-    const properties = await Property.find({ listedBy: id, isActive: true })
+    const properties = await Property.find({ agentId: id, isActive: true })
       .select('name price images address propertyType bedrooms bathrooms sqft status')
       .sort({ createdAt: -1 });
 
@@ -100,4 +100,5 @@ export const updateProfile = async (req, res) => {
     console.error('Update profile error:', error);
     res.status(500).json({ error: 'Failed to update profile' });
   }
-};
+}
+

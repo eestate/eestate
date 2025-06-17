@@ -4,11 +4,15 @@ import {
   Eye,
   Filter,
   CheckCircle,
+  Search
 } from 'lucide-react';
 
 // Booking Monitoring Component
 const AdminBooking = () => {
   const [selectedBooking, setSelectedBooking] = useState(null);
+  const [showStatusDropdown, setShowStatusDropdown] = useState(false);
+  const [selectedStatus, setSelectedStatus] = useState('All Status');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const bookings = [
     { 
@@ -57,6 +61,17 @@ const AdminBooking = () => {
     },
   ];
 
+  const statusOptions = ['All Status', 'Confirmed', 'Completed', 'Cancelled'];
+
+  const filteredBookings = bookings
+    .filter(booking => selectedStatus === 'All Status' || booking.status === selectedStatus)
+    .filter(booking => 
+      booking.property.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      booking.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      booking.guest.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      booking.agent.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
   const openDetails = (booking) => {
     setSelectedBooking(booking);
   };
@@ -65,14 +80,53 @@ const AdminBooking = () => {
     setSelectedBooking(null);
   };
 
+  const handleStatusFilterSelect = (status) => {
+    setSelectedStatus(status);
+    setShowStatusDropdown(false);
+  };
+
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
+  };
+
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-semibold">Booking Monitoring</h1>
-        <button className="flex items-center space-x-2 px-4 py-2 border rounded-lg">
-          <Filter size={16} />
-          <span>All Status</span>
-        </button>
+        <div className="flex items-center space-x-4">
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Search by property, location, guest, or agent..."
+              value={searchQuery}
+              onChange={handleSearchChange}
+              className="pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+          </div>
+          <div className="relative">
+            <button 
+              className="flex items-center space-x-2 px-4 py-2 border rounded-lg"
+              onClick={() => setShowStatusDropdown(!showStatusDropdown)}
+            >
+              <Filter size={16} />
+              <span>{selectedStatus}</span>
+            </button>
+            {showStatusDropdown && (
+              <div className="absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-lg z-10">
+                {statusOptions.map((status, index) => (
+                  <button 
+                    key={index}
+                    className="w-full text-left px-4 py-2 hover:bg-gray-100"
+                    onClick={() => handleStatusFilterSelect(status)}
+                  >
+                    {status}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
       
       {/* Bookings Table */}
@@ -90,7 +144,7 @@ const AdminBooking = () => {
               </tr>
             </thead>
             <tbody>
-              {bookings.map((booking, index) => (
+              {filteredBookings.map((booking, index) => (
                 <tr key={index} className="border-b hover:bg-gray-50">
                   <td className="p-4">
                     <div>
