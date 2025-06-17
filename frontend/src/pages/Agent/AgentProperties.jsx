@@ -280,7 +280,7 @@ const confirmDelete = async () => {
       setFormError(err?.data?.error || err?.data?.details || err.message || 'Failed to update property. Please try again.');
     }
   }}
-  isEditing={!!selectedProperty}
+  isEditing={!!selectedProperty} 
 />
     </div>
   );
