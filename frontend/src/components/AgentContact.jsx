@@ -494,6 +494,8 @@ const AgentContact = ({ agent, propertyId }) => {
           <p className="text-gray-600">Property Agent</p>
         </div>
       </div>
+
+      {/* Contact Info */}
       <div className="mb-6">
         <div className="flex items-center mb-2">
           <PhoneIcon size={16} className="mr-2 text-gray-600" />
@@ -504,6 +506,8 @@ const AgentContact = ({ agent, propertyId }) => {
           <span>{agent.email}</span>
         </div>
       </div>
+
+      {/* Toggle Button */}
       <div className="mb-6">
         <button
           onClick={() => setShowChat(!showChat)}
@@ -513,6 +517,7 @@ const AgentContact = ({ agent, propertyId }) => {
           {showChat ? 'Show Schedule Form' : 'Chat with Agent'}
         </button>
       </div>
+
       {showChat ? (
         <div className="bg-gray-100 p-4 rounded-md mb-6 h-[500px] flex flex-col">
           <div className="flex justify-between items-center mb-4">
@@ -591,6 +596,8 @@ const AgentContact = ({ agent, propertyId }) => {
               required
             />
           </div>
+
+          {/* Email Field */}
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Email
@@ -604,6 +611,8 @@ const AgentContact = ({ agent, propertyId }) => {
               required
             />
           </div>
+
+          {/* Phone Field */}
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Phone
@@ -617,6 +626,8 @@ const AgentContact = ({ agent, propertyId }) => {
               required
             />
           </div>
+
+          {/* Message Field */}
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Message
@@ -630,6 +641,8 @@ const AgentContact = ({ agent, propertyId }) => {
               required
             />
           </div>
+
+          {/* Date/Time Fields */}
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Choose Date and Time
@@ -659,6 +672,8 @@ const AgentContact = ({ agent, propertyId }) => {
               </div>
             </div>
           </div>
+
+          {/* Submit Button */}
           <button
             type="submit"
             disabled={bookingLoading}

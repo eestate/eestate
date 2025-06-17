@@ -22,6 +22,9 @@ cd your-repo
 
 git remote add upstream https://github.com/original-owner/your-repo.git
 
+git remote set-url origin https://github.com/yourUsername/eestate.git
+
+
 git remote -v
 
 

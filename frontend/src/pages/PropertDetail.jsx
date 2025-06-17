@@ -525,7 +525,7 @@ const PropertyDetail = () => {
                     image={prop.images?.[0] || 'https://via.placeholder.com/400'}
                     beds={prop.bedrooms}
                     baths={prop.bathrooms}
-                    area={prop.sqft ? `${prop.sqft} sq ft` : undefined}
+                    area={prop.sqft ? `${prop.sqft} sq ft `: undefined}
                     type={prop.propertyType}
                   />
                 ))}
