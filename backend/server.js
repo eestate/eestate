@@ -10,7 +10,7 @@ import authRoutes from './routes/authRoutes.js'
 import userRoutes from './routes/userRoutes.js'
 import agentRoutes from './routes/agentRoutes.js'
 import PropertyRoutes from './routes/propertyRoutes.js'
-import subscriptionRoutes from './routes/subscriptionRoutes.js'
+// import subscriptionRoutes from './routes/subscriptionRoutes.js'
 import chatRoutes from "./routes/chatRoutes.js" 
 
 dotenv.config();
@@ -18,6 +18,7 @@ const app = express();
 const PORT = process.env.PORT;
 
 import { Property } from './models/Property.js';
+import adminRouter from './routes/adminRoute.js';
 
 const initializeDB = async () => {
   try {
@@ -58,8 +59,9 @@ app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/agent', agentRoutes);
 app.use('/api/property', PropertyRoutes);
-app.use('/api', subscriptionRoutes);
+// app.use('/api', subscriptionRoutes);
 app.use("/api/chat", chatRoutes);
+app.use('/api/admin',adminRouter)
 
 
 

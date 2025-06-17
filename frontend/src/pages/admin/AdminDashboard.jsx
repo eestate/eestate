@@ -5,10 +5,108 @@ import {
   CreditCard, 
   TrendingUp,
 } from 'lucide-react';
+import { Line }from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+} from 'chart.js';
 
+// Register Chart.js components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
 // Analytics Component
 const AdminDashboard = () => {
+  // Chart data
+  const chartData = {
+    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+    datasets: [
+      {
+        label: 'Views',
+        data: [400, 600, 450, 800, 650, 900, 750, 850, 950, 1000, 1100, 1200],
+        borderColor: 'rgb(59, 130, 246)',
+        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+        tension: 0.4,
+        fill: true,
+      },
+      {
+        label: 'Properties Listed',
+        data: [200, 300, 250, 400, 350, 500, 450, 550, 600, 650, 700, 800],
+        borderColor: 'rgb(34, 197, 94)',
+        backgroundColor: 'rgba(34, 197, 94, 0.2)',
+        tension: 0.4,
+        fill: true,
+      },
+    ],
+  };
+
+  // Chart options
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'top',
+        labels: {
+          font: {
+            size: 12,
+          },
+        },
+      },
+      title: {
+        display: false,
+      },
+      tooltip: {
+        mode: 'index',
+        intersect: false,
+        callbacks: {
+          label: function(context) {
+            return `${context.dataset.label}: ${context.parsed.y}`;
+          },
+        },
+      },
+    },
+    scales: {
+      x: {
+        grid: {
+          display: false,
+        },
+        title: {
+          display: true,
+          text: 'Month',
+        },
+      },
+      y: {
+        grid: {
+          color: 'rgba(0, 0, 0, 0.1)',
+        },
+        title: {
+          display: true,
+          text: 'Count',
+        },
+        beginAtZero: true,
+      },
+    },
+    interaction: {
+      mode: 'nearest',
+      axis: 'x',
+      intersect: false,
+    },
+  };
+
   return (
     <div className="p-6">
       <h1 className="text-2xl font-semibold mb-6">Analytics</h1>
@@ -63,18 +161,8 @@ const AdminDashboard = () => {
       {/* Chart */}
       <div className="bg-white p-6 rounded-lg shadow-sm border mb-8">
         <h3 className="text-lg font-semibold mb-4">Monthly Trends</h3>
-        <div className="h-64 flex items-end justify-between space-x-2">
-          {[40, 60, 45, 80, 65, 90, 75, 85, 95, 100, 110, 120].map((height, index) => (
-            <div key={index} className="flex-1 flex flex-col items-center">
-              <div 
-                className="w-full bg-blue-500 rounded-t"
-                style={{ height: `${height}%` }}
-              ></div>
-              <span className="text-xs text-gray-500 mt-2">
-                {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][index]}
-              </span>
-            </div>
-          ))}
+        <div className="h-64">
+          <Line data={chartData} options={chartOptions} />
         </div>
       </div>
       
@@ -104,4 +192,4 @@ const AdminDashboard = () => {
   );
 };
 
-export default AdminDashboard
+export default AdminDashboard;

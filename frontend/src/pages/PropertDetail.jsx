@@ -260,10 +260,10 @@ const PropertyDetail = () => {
         <div>
           <AgentContact
             agent={{
-              name: property.listedBy?.name || 'Unknown Agent',
-              photo: property.listedBy?.profilePic || 'https://via.placeholder.com/150',
-              phone: property.listedBy?.phone || 'N/A',
-              email: property.listedBy?.email || 'N/A',
+              name: property.agentId?.name || 'Unknown Agent',
+              photo: property.agentId?.profilePic || 'https://via.placeholder.com/150',
+              phone: property.agentId?.phone || 'N/A',
+              email: property.agentId?.email || 'N/A',
             }}
           />
         </div>

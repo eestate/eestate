@@ -122,7 +122,7 @@ export const createProperty = async (req, res) => {
         ? JSON.parse(propertyData.features || '[]') 
         : Array.isArray(propertyData.features) ? propertyData.features : [],
       images: uploadedImages.map(img => img.url),
-      listedBy: req.user._id,
+      agentId: req.user._id,
       location: {
         type: "Point",
         coordinates: [lng, lat], // [longitude, latitude]
@@ -192,7 +192,7 @@ export const editProperty = async (req, res) => {
     }
 
     // Check authorization
-    if (property.listedBy.toString() !== req.user._id.toString()) {
+    if (property.agentId.toString() !== req.user._id.toString()) {
       return res.status(403).json({ error: "Unauthorized to edit this property" });
     }
 
@@ -335,7 +335,7 @@ export const deleteProperty = async (req, res) => {
     }
 
     // Check authorization
-    if (property.listedBy.toString() !== req.user._id.toString()) {
+    if (property.agentId.toString() !== req.user._id.toString()) {
       console.log(`User ${req.user._id} unauthorized to delete property ${id}`);
       return res.status(403).json({ error: "Unauthorized to delete this property" });
     }
@@ -386,7 +386,7 @@ export const getMyProperties = async (req, res, next) => {
       return res.status(403).json({ message: 'Only agents can view their properties' });
     }
 
-    const properties = await Property.find({ listedBy: req.user._id });
+    const properties = await Property.find({ agentId: req.user._id });
     await Promise.all(
       properties.map(property =>
         Property.findByIdAndUpdate(property._id, { $inc: { views: 1 } }, { new: true })
@@ -407,7 +407,7 @@ export const getAgentStats = async (req, res, next) => {
       return res.status(403).json({ message: 'Only agents can view their stats' });
     }
 
-    const properties = await Property.find({ listedBy: req.user._id });
+    const properties = await Property.find({ agentId: req.user._id });
 
     const totalProperties = properties.length;
     const activeProperties = properties.filter(p => p.isActive).length;
