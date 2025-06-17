@@ -33,10 +33,10 @@ A. Before starting a new task:
 
 1.Update your main first:
 
-git checkout main
+git checkout dev
 git fetch upstream
-git merge upstream/main
-git push origin main  # (optional, to keep your GitHub in sync)
+git merge upstream/dev
+git push origin dev  # (optional, to keep your GitHub in sync)
 
 
 2. Create a new branch for your task:
