@@ -70,6 +70,15 @@ export const adminApi = createApi({
       providesTags: ["Subscriptions"],
     }),
 
+    getAllActiveUsers: builder.query({
+      query: () => "/getAllActiveUsers",
+      providesTags: ["Activeusers"]
+    }),
+    getTotalProperties: builder.query({
+      query: () => "/getTotalProperties",
+      providesTags: ["TotalProperty"]
+    })
+
   }),
 });
 
@@ -80,5 +89,8 @@ export const {
   useAgentDetailsQuery,
   useAddSubscriptionMutation,
   useGetAllSubscriptionsQuery,
-  useEditSubscriptionMutation          
+  useEditSubscriptionMutation,
+  useGetAllActiveUsersQuery,
+  useGetTotalPropertiesQuery          
 } = adminApi;
+
