@@ -41,6 +41,10 @@ const userSchema=new mongoose.Schema({
         enum:['user','agent','admin'],
         default:'user',
     },
+    about: {
+  type: String,
+  default: null,
+},
 isBlocked:{
     type:Boolean,
     default:false,

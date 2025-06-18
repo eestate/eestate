@@ -12,6 +12,8 @@ import agentRoutes from './routes/agentRoutes.js'
 import PropertyRoutes from './routes/propertyRoutes.js'
 // import subscriptionRoutes from './routes/subscriptionRoutes.js'
 import chatRoutes from "./routes/chatRoutes.js" 
+import bookingRoutes from './routes/bookingRoutes.js'
+import aboutRoutes from './routes/aboutRoutes.js'
 
 dotenv.config();
 const app = express();
@@ -62,7 +64,8 @@ app.use('/api/property', PropertyRoutes);
 // app.use('/api', subscriptionRoutes);
 app.use("/api/chat", chatRoutes);
 app.use('/api/admin',adminRouter)
-
+app.use('/api/bookings',bookingRoutes);
+app.use('/api/about', aboutRoutes);
 
 
 
