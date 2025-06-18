@@ -4,6 +4,7 @@ import { Property, Apartment, Villa, Plot, Hostel } from "../models/Property.js"
 import cloudinary from "../config/cloudinary.js"; 
 import fs from 'fs'
 import { upload, uploadToCloudinary, checkCloudinaryHealth } from "../middleware/uploadMiddleware.js";
+import Booking from "../models/Booking.js";
 
 // Helper function to get the appropriate model based on property type
 const getModelByType = (propertyType) => {
@@ -408,13 +409,16 @@ export const getAgentStats = async (req, res, next) => {
     }
 
     const properties = await Property.find({ agentId: req.user._id });
+    const propertyIds = properties.map((p) => p._id);
 
     const totalProperties = properties.length;
     const activeProperties = properties.filter(p => p.isActive).length;
     const soldProperties = properties.filter(p => !p.isActive).length; 
     const totalViews = properties.reduce((sum, p) => sum + p.views, 0);
-    
-    const monthlyStats = [
+    const totalEnquiries = await Booking.countDocuments({
+      propertyId: { $in: propertyIds },
+    });
+        const monthlyStats = [
       { month: 'Jan', views: 3200, enquiries: 1800 },
       { month: 'Feb', views: 3800, enquiries: 2800 },
       { month: 'Mar', views: 5200, enquiries: 4800 },
@@ -427,8 +431,9 @@ export const getAgentStats = async (req, res, next) => {
       totalProperties,
       activeProperties,
       soldProperties,
-      totalEnquiries: totalViews, 
+      totalViews ,
       monthlyStats,
+      totalEnquiries,
     });
   } catch (error) {
     next(error);

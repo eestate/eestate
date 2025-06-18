@@ -6,6 +6,7 @@ import {
   Home, 
   CreditCard, 
   Calendar,
+  Info ,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -20,6 +21,8 @@ export const AdminSidebar = ({ activeTab, setActiveTab }) => {
     { id: 'property-moderation', label: 'Property Moderation', icon: Home, path: '/admin/property-moderation' },
     { id: 'subscriptions', label: 'Subscriptions', icon: CreditCard, path: '/admin/subscriptions' },
     { id: 'bookings', label: 'Bookings', icon: Calendar, path: '/admin/bookings' },
+    { id: 'about', label: 'About', icon: Info, path: '/admin/about' },
+
   ];
 
   const currentPage = location.pathname.split('/')[2] || 'dashboard';

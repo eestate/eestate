@@ -19,7 +19,7 @@ export const getAllAgents = async (req, res, next) => {
     }
 
     const agents = await User.find(query)
-      .select('name specialization experience image')
+      .select('name specialization experience image profilePic')
       .limit(Number(limit))
       .skip((Number(page) - 1) * Number(limit))
       .sort({ createdAt: -1 });
@@ -42,7 +42,7 @@ export const getAgentDetails = async (req, res, next) => {
     const { id } = req.params;
 
     const agent = await User.findById(id)
-      .select('name email phone gender profilePic role isVerified');
+      .select('name email phone gender profilePic role isVerified about');
 
     if (!agent || agent.role !== 'agent' || agent.isBlocked) {
       return res.status(404).json({ message: 'Agent not found or not active' });
@@ -80,9 +80,9 @@ export const getAgentDetails = async (req, res, next) => {
 export const updateProfile = async (req, res) => {
   try {
     const userId = req.user._id;
-    const { name } = req.body;
+    const { name ,about } = req.body;
 
-    let updatedFields = { name };
+    let updatedFields = { name ,about};
 
     if (req.file) {
       const result = await uploadToCloudinary(req.file);
@@ -93,7 +93,7 @@ export const updateProfile = async (req, res) => {
       userId,
       { $set: updatedFields },
       { new: true }
-    ).select('-password'); // exclude password
+    ).select('-password'); 
 
     res.status(200).json(updatedUser);
   } catch (error) {
