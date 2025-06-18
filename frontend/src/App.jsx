@@ -1,4 +1,5 @@
 
+
 import React from 'react'
 import { Routes, Route, useLocation } from 'react-router-dom'
 import Home from './pages/Home'
@@ -25,7 +26,8 @@ import AgentListingPage from './pages/AgentListing'
 import AgentDetailsPage from './pages/AgentDetails'
 import About from './pages/About'
 import { ProtectedRoute } from './ProtectedRoutes/ProtectedRoute'
-
+import UserDetails from './pages/admin/UserDetails'
+import AgentDetails from './pages/admin/AgentDetails'
 
 const App = () => {
   const location = useLocation();

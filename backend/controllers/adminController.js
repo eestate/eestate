@@ -144,3 +144,30 @@ export const editSubscription = async (req, res) => {
     .status(200)
     .json({ message: "Subscription Plan Updated", data: updatedPlan });
 };
+
+
+export const getTotalProperties = async (req, res) => {
+  try {
+    let TotalProperties = await Property.countDocuments();
+    res.status(200).json({ Total: TotalProperties });
+  } catch {
+    res.status(500).json({ message: "error fetching for total properties" });
+  }
+};
+
+export const getAllActiveUsers = async (req, res) => {
+  try {
+    let ActiveUsers = await User.countDocuments({ isBlocked: false, role: "user" });
+    res.status(200).json({ TotalUser: ActiveUsers });
+  } catch (error) {
+    res.status(500).json({ message: "Active users fetching is failed", error: error.message });
+  }
+};
+
+// export const TotalRevenue=async (req,res)=>{
+//   try{
+
+//   }catch(error){
+
+//   }
+// }
