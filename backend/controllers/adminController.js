@@ -114,7 +114,6 @@ export const allSubscriptionPlans = async (req, res) => {
     .json({ message: "All Subscriptions", data: allSubscriptions });
 };
 
-
 export const editSubscription = async (req, res) => {
   const { planId } = req.params;
 
@@ -122,7 +121,7 @@ export const editSubscription = async (req, res) => {
     return res.status(404).json({ message: "Invalid Plan Id" });
   }
 
-  console.log('req.body',req.body);
+  console.log("plan update data", req.body);
 
   const planExist = await subPlan.findById(planId);
 
@@ -145,6 +144,24 @@ export const editSubscription = async (req, res) => {
     .json({ message: "Subscription Plan Updated", data: updatedPlan });
 };
 
+export const deletePlan = async (req, res) => {
+  const { planId } = req.params;
+  console.log("delete paln id", planId);
+
+  if (!mongoose.Types.ObjectId.isValid(planId)) {
+    return res.status(404).json({ message: "Invalid Plan Id" });
+  }
+
+  const planExist = await subPlan.findOne({ _id: planId });
+
+  if (!planExist) {
+    return res.status(404).json({ message: "Plan Not Found" }); // ✅ fixed here
+  }
+
+  await subPlan.findByIdAndDelete(planId);
+
+  res.status(200).json({ message: "Plan deleted successfully" });
+};
 
 export const getTotalProperties = async (req, res) => {
   try {
@@ -157,10 +174,16 @@ export const getTotalProperties = async (req, res) => {
 
 export const getAllActiveUsers = async (req, res) => {
   try {
-    let ActiveUsers = await User.countDocuments({ isBlocked: false, role: "user" });
+    let ActiveUsers = await User.countDocuments({
+      isBlocked: false,
+      role: "user",
+    });
     res.status(200).json({ TotalUser: ActiveUsers });
   } catch (error) {
-    res.status(500).json({ message: "Active users fetching is failed", error: error.message });
+    res.status(500).json({
+      message: "Active users fetching is failed",
+      error: error.message,
+    });
   }
 };
 
