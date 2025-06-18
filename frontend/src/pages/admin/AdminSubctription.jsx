@@ -17,18 +17,30 @@ import {
 } from "lucide-react";
 import {
   useAddSubscriptionMutation,
+  useDeleteSubscriptionMutation,
+  useEditSubscriptionMutation,
   useGetAllSubscriptionsQuery,
 } from "@/redux/services/AdminApi";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import { Toaster, toast } from "sonner";
 
 // Subscription Management Component
 const AdminSubscription = () => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [showPlanDropdown, setShowPlanDropdown] = useState(false);
   const [selectedFilterPlan, setSelectedFilterPlan] = useState("All Plans");
   const [searchQuery, setSearchQuery] = useState("");
-  const [formData, setFormData] = useState({
+  const [addFormData, setAddFormData] = useState({
+    planName: "",
+    amount: "",
+    period: "per month",
+    features: [],
+    color: "gray",
+    newFeature: "",
+  });
+  const [editFormData, setEditFormData] = useState({
     planName: "",
     amount: "",
     period: "per month",
@@ -38,12 +50,16 @@ const AdminSubscription = () => {
   });
 
   // Initialize the mutation hook
-  const [addSubscription, { isLoading }] = useAddSubscriptionMutation();
+  const [addSubscription, { isLoading: isAdding }] =
+    useAddSubscriptionMutation();
   const {
     data: subscriptionsData,
     refetch,
     isLoading: isLoadingSubscriptions,
   } = useGetAllSubscriptionsQuery();
+
+  const [editSubscription] = useEditSubscriptionMutation();
+  const [deleteSubscription] = useDeleteSubscriptionMutation();
 
   // Get plans from API data
   const plans = subscriptionsData?.data || [];
@@ -99,61 +115,96 @@ const AdminSubscription = () => {
         subscriber.email.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-  const handleEditClick = (plan = null) => {
-    if (plan) {
-      setSelectedPlan(plan);
-      setFormData({
-        planName: plan.planName,
-        amount: plan.amount,
-        period: plan.period,
-        features: plan.features || [],
-        color: plan.color,
-        newFeature: "",
-      });
-    } else {
-      setSelectedPlan(null);
-      setFormData({
-        planName: "",
-        amount: "",
-        period: "per month",
-        features: [],
-        color: "gray",
-        newFeature: "",
-      });
-    }
-    setIsModalOpen(true);
+  const handleAddClick = () => {
+    setAddFormData({
+      planName: "",
+      amount: "",
+      period: "per month",
+      features: [],
+      color: "gray",
+      newFeature: "",
+    });
+    setIsAddModalOpen(true);
   };
 
-  const handleFormSubmit = async (e) => {
+  const handleEditClick = (plan) => {
+    console.log("Editing plan with ID:", plan._id);
+    setSelectedPlan(plan);
+    setEditFormData({
+      planName: plan.planName,
+      amount: plan.amount,
+      period: plan.period,
+      features: plan.features || [],
+      color: plan.color,
+      newFeature: "",
+    });
+    setIsEditModalOpen(true);
+  };
+
+  const handleAddSubmit = async (e) => {
     e.preventDefault();
     const newPlan = {
-      _id: selectedPlan?._id,
-      planName: formData.planName,
-      amount: formData.amount,
-      period: formData.period,
-      features: formData.features,
-      color: formData.color,
+      planName: addFormData.planName,
+      amount: addFormData.amount,
+      period: addFormData.period,
+      features: addFormData.features,
+      color: addFormData.color,
     };
 
     try {
-      // Call the mutation to add/update the subscription
       await addSubscription(newPlan).unwrap();
       await refetch();
-      setIsModalOpen(false);
-      console.log("Plan data submitted:", newPlan);
+      setIsAddModalOpen(false);
+      console.log("New plan added:", newPlan);
     } catch (error) {
-      console.error("Failed to submit plan:", error);
+      console.error("Failed to add plan:", error);
     }
   };
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+  const handleEditSubmit = async (e) => {
+    // console.log("Edit PLan id ", selectedPlan._id);
+
+    e.preventDefault();
+    const updatedPlan = {
+      _id: selectedPlan._id,
+      planName: editFormData.planName,
+      amount: editFormData.amount,
+      period: editFormData.period,
+      features: editFormData.features,
+      color: editFormData.color,
+    };
+
+    try {
+      console.log("Edit plan data and id sending....");
+      await editSubscription(updatedPlan);
+      await refetch();
+      setIsEditModalOpen(false);
+      toast.success("Plan Updated Successfully");
+      // console.log("Plan updated:", updatedPlan);
+    } catch (error) {
+      console.error("Failed to update plan:", error);
+    }
   };
 
-  const handleAddFeature = () => {
-    if (formData.newFeature.trim()) {
-      setFormData((prev) => ({
+  const handleAddInputChange = (e) => {
+    const { name, value } = e.target;
+    setAddFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleEditInputChange = (e) => {
+    const { name, value } = e.target;
+    setEditFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleAddFeature = (formType) => {
+    if (formType === "add" && addFormData.newFeature.trim()) {
+      setAddFormData((prev) => ({
+        ...prev,
+        features: [...prev.features, prev.newFeature.trim()],
+        newFeature: "",
+      }));
+    } else if (formType === "edit" && editFormData.newFeature.trim()) {
+      setEditFormData((prev) => ({
         ...prev,
         features: [...prev.features, prev.newFeature.trim()],
         newFeature: "",
@@ -161,11 +212,18 @@ const AdminSubscription = () => {
     }
   };
 
-  const handleRemoveFeature = (index) => {
-    setFormData((prev) => ({
-      ...prev,
-      features: prev.features.filter((_, i) => i !== index),
-    }));
+  const handleRemoveFeature = (index, formType) => {
+    if (formType === "add") {
+      setAddFormData((prev) => ({
+        ...prev,
+        features: prev.features.filter((_, i) => i !== index),
+      }));
+    } else {
+      setEditFormData((prev) => ({
+        ...prev,
+        features: prev.features.filter((_, i) => i !== index),
+      }));
+    }
   };
 
   const handlePlanFilterSelect = (planName) => {
@@ -177,12 +235,28 @@ const AdminSubscription = () => {
     setSearchQuery(e.target.value);
   };
 
+  const handleDelete = async () => {
+    let a = window.confirm("are you sure");
+    console.log("window", a);
+
+    if (a == true) {
+      console.log("delete Plan id send.....", selectedPlan._id);
+      deleteSubscription(selectedPlan._id);
+      refetch();
+      toast.success("Plan Deleted Successfully");
+      setIsEditModalOpen(false);
+    } else {
+      console.log(" delete Plan id not send", selectedPlan._id);
+    }
+  };
+
   if (isLoadingSubscriptions) {
     return <LoadingSpinner />;
   }
 
   return (
     <div className="p-6">
+      <Toaster position="top-right" richColors expand={true} />
       <h1 className="text-2xl font-semibold mb-6">Subscription Management</h1>
 
       {/* Plans */}
@@ -231,20 +305,18 @@ const AdminSubscription = () => {
         ))}
         <button
           className="bg-gray-100 p-6 rounded-lg shadow-sm border text-center text-gray-600 hover:bg-gray-200"
-          onClick={() => handleEditClick()}
+          onClick={handleAddClick}
         >
           + Add New Plan
         </button>
       </div>
 
-      {/* Modal */}
-      {isModalOpen && (
+      {/* Add Plan Modal */}
+      {isAddModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-semibold mb-4">
-              {selectedPlan ? "Edit Plan" : "Add New Plan"}
-            </h2>
-            <form onSubmit={handleFormSubmit}>
+            <h2 className="text-xl font-semibold mb-4">Add New Plan</h2>
+            <form onSubmit={handleAddSubmit}>
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700">
                   Plan Name
@@ -252,8 +324,8 @@ const AdminSubscription = () => {
                 <input
                   type="text"
                   name="planName"
-                  value={formData.planName}
-                  onChange={handleInputChange}
+                  value={addFormData.planName}
+                  onChange={handleAddInputChange}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 p-2 border"
                   required
                 />
@@ -265,8 +337,8 @@ const AdminSubscription = () => {
                 <input
                   type="number"
                   name="amount"
-                  value={formData.amount}
-                  onChange={handleInputChange}
+                  value={addFormData.amount}
+                  onChange={handleAddInputChange}
                   min="0"
                   step="0.01"
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 p-2 border"
@@ -279,8 +351,8 @@ const AdminSubscription = () => {
                 </label>
                 <select
                   name="period"
-                  value={formData.period}
-                  onChange={handleInputChange}
+                  value={addFormData.period}
+                  onChange={handleAddInputChange}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 p-2 border"
                 >
                   <option value="per month">per month</option>
@@ -295,21 +367,21 @@ const AdminSubscription = () => {
                   <input
                     type="text"
                     name="newFeature"
-                    value={formData.newFeature}
-                    onChange={handleInputChange}
+                    value={addFormData.newFeature}
+                    onChange={handleAddInputChange}
                     placeholder="Enter a feature"
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 p-2 border"
                   />
                   <button
                     type="button"
-                    onClick={handleAddFeature}
+                    onClick={() => handleAddFeature("add")}
                     className="mt-1 p-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
                   >
                     <Plus size={16} />
                   </button>
                 </div>
                 <ul className="space-y-2 max-h-40 overflow-y-auto">
-                  {formData.features.map((feature, index) => (
+                  {addFormData.features.map((feature, index) => (
                     <li
                       key={index}
                       className="flex justify-between items-center text-sm text-gray-600 bg-gray-100 p-2 rounded"
@@ -317,7 +389,7 @@ const AdminSubscription = () => {
                       <span>{feature}</span>
                       <button
                         type="button"
-                        onClick={() => handleRemoveFeature(index)}
+                        onClick={() => handleRemoveFeature(index, "add")}
                         className="text-red-500 hover:text-red-700"
                       >
                         <Trash2 size={16} />
@@ -332,8 +404,8 @@ const AdminSubscription = () => {
                 </label>
                 <select
                   name="color"
-                  value={formData.color}
-                  onChange={handleInputChange}
+                  value={addFormData.color}
+                  onChange={handleAddInputChange}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 p-2 border"
                 >
                   <option value="gray">Gray</option>
@@ -345,20 +417,147 @@ const AdminSubscription = () => {
                 <button
                   type="button"
                   className="px-4 py-2 border rounded-md text-gray-600 hover:bg-gray-100"
-                  onClick={() => setIsModalOpen(false)}
+                  onClick={() => setIsAddModalOpen(false)}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-                  disabled={isLoading}
+                  disabled={isAdding}
                 >
-                  {isLoading
-                    ? "Processing..."
-                    : selectedPlan
-                    ? "Update Plan"
-                    : "Add Plan"}
+                  {isAdding ? "Processing..." : "Add Plan"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Plan Modal */}
+      {isEditModalOpen && selectedPlan && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h2 className="text-xl font-semibold mb-4">Edit Plan</h2>
+            <form onSubmit={handleEditSubmit}>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700">
+                  Plan Name
+                </label>
+                <input
+                  type="text"
+                  name="planName"
+                  value={editFormData.planName}
+                  onChange={handleEditInputChange}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 p-2 border"
+                  required
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700">
+                  Amount (enter 0 for free plan)
+                </label>
+                <input
+                  type="number"
+                  name="amount"
+                  value={editFormData.amount}
+                  onChange={handleEditInputChange}
+                  min="0"
+                  step="0.01"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 p-2 border"
+                  required
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700">
+                  Period
+                </label>
+                <select
+                  name="period"
+                  value={editFormData.period}
+                  onChange={handleEditInputChange}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 p-2 border"
+                >
+                  <option value="per month">per month</option>
+                  <option value="per year">per year</option>
+                </select>
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700">
+                  Features
+                </label>
+                <div className="flex items-center space-x-2 mb-2">
+                  <input
+                    type="text"
+                    name="newFeature"
+                    value={editFormData.newFeature}
+                    onChange={handleEditInputChange}
+                    placeholder="Enter a feature"
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 p-2 border"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleAddFeature("edit")}
+                    className="mt-1 p-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                  >
+                    <Plus size={16} />
+                  </button>
+                </div>
+                <ul className="space-y-2 max-h-40 overflow-y-auto">
+                  {editFormData.features.map((feature, index) => (
+                    <li
+                      key={index}
+                      className="flex justify-between items-center text-sm text-gray-600 bg-gray-100 p-2 rounded"
+                    >
+                      <span>{feature}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveFeature(index, "edit")}
+                        className="text-red-500 hover:text-red-700"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700">
+                  Button Color
+                </label>
+                <select
+                  name="color"
+                  value={editFormData.color}
+                  onChange={handleEditInputChange}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 p-2 border"
+                >
+                  <option value="gray">Gray</option>
+                  <option value="blue">Blue</option>
+                  <option value="purple">Purple</option>
+                </select>
+              </div>
+              <div className="flex justify-end space-x-2">
+                <button
+                  type="button"
+                  className="px-4 py-2 border rounded-md text-white bg-red-600 hover:bg-red-700 transition-colors duration-200 w-full sm:w-auto"
+                  onClick={() => handleDelete()}
+                >
+                  Delete
+                </button>
+
+                <button
+                  type="button"
+                  className="px-4 py-2 border rounded-md text-gray-600 hover:bg-gray-100"
+                  onClick={() => setIsEditModalOpen(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                  disabled={isAdding}
+                >
+                  {isAdding ? "Processing..." : "Update Plan"}
                 </button>
               </div>
             </form>
