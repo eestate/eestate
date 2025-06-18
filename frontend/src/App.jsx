@@ -25,7 +25,11 @@ import AgentListingPage from './pages/AgentListing'
 import AgentDetailsPage from './pages/AgentDetails'
 import About from './pages/About'
 import { ProtectedRoute } from './ProtectedRoutes/ProtectedRoute'
-
+import UserDetails from './pages/admin/UserDetails'
+import AgentDetails from './pages/admin/AgentDetails'
+import AgentProfile from './pages/Agent/AgentProfile'
+import AgentSubscription from './pages/Agent/AgentSubscription'
+import AdminAboutPage from './pages/admin/AdminAboutPage'
 
 const App = () => {
   const location = useLocation();
@@ -73,6 +77,8 @@ const App = () => {
             <Route path="properties" element={<AgentProperties />} />
             <Route path="messages" element={<AgentMessages />} />
             <Route path="enquiries" element={<AgentEnquiries />} />
+             <Route path="agentprofile" element={<AgentProfile />} />
+            <Route path="subscription" element={<AgentSubscription />} />
           </Route>
 
           {/* Admin Routes (if needed) */}
@@ -95,6 +101,8 @@ const App = () => {
             <Route path="property-moderation" element={<AdminProperty />} />
             <Route path="subscriptions" element={<AdminSubscription />} />
             <Route path="bookings" element={<AdminBooking />} />
+            <Route path="about" element={<AdminAboutPage />} />
+
           </Route>
         </Routes>
       </main>

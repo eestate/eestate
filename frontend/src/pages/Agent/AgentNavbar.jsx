@@ -44,9 +44,16 @@ export const AgentNavbar = () => {
     window.location.href = '/';
   };
 
-  const handleProfileClick = () => {
+ const handleProfileClick = () => {
     if (isAuthenticated) {
-      navigate('/agent/profile');
+      navigate('/agent/agentprofile');
+    } else {
+      setIsLoginOpen(true);
+    }
+  };
+  const handleSubscriptionClick = () => {
+    if (isAuthenticated) {
+      navigate('/agent/subscription');
     } else {
       setIsLoginOpen(true);
     }
@@ -106,6 +113,9 @@ export const AgentNavbar = () => {
                   <DropdownMenuContent className="w-48" align="end">
                     <DropdownMenuItem onClick={handleProfileClick}>
                       Profile
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleSubscriptionClick}>
+                      Subscription
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={handleLogout}
