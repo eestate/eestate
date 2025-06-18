@@ -194,7 +194,8 @@ export const checkAuth = async (req, res) => {
         id: req.user._id,
         email: req.user.email,
         name: req.user.name,
-        role: req.user.role
+        role: req.user.role,
+        profilePic: req.user.profilePic
       }
     });
   } catch (error) {

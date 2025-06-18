@@ -38,6 +38,8 @@ const handleLogout = async () => {
     
     // Soft redirect - no full page reload
     navigate('/', { replace: true });
+    window.location.reload();
+
     
     // Close any open modals
     setIsLoginOpen(false);
