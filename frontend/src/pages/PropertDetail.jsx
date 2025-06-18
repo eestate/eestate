@@ -285,15 +285,14 @@ import {
   BathIcon,
   SquareIcon,
   MapPinIcon,
-  CalendarIcon,
-  HouseIcon,
   HeartIcon,
-  ShareIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
 } from 'lucide-react';
 import { useGetPropertyQuery, useGetSimilarPropertiesQuery } from '../redux/services/propertyApi';
 import { useGetWishlistQuery, useAddToWishlistMutation, useRemoveFromWishlistMutation } from '../redux/services/userApi';
+
+const KERALA_CENTER = { lat: 10.8505, lng: 76.2711 };
 
 const PropertyDetail = () => {
   const { id } = useParams();
@@ -318,12 +317,30 @@ const PropertyDetail = () => {
 
   const similarProperties = Array.isArray(similarData?.properties) ? similarData.properties : [];
 
+    const getCoordinates = (property) => {
+    try {
+      if (property?.location?.coordinates?.length === 2) {
+        const [lng, lat] = property.location.coordinates;
+        // Validate coordinates (Kerala bounds: lat 8.0-12.5, lng 74.5-77.5)
+        if (lat >= 8.0 && lat <= 12.5 && lng >= 74.5 && lng <= 77.5) {
+          return { lat, lng };
+        }
+      }
+      return KERALA_CENTER;
+    } catch (err) {
+      console.error('Coordinate parsing error:', err);
+      return KERALA_CENTER;
+    }
+  };
+
   // Debug: Log API responses and props passed to AgentContact
   useEffect(() => {
     console.log('Property Response:', { property, isLoading, isError, error });
     console.log('Wishlist:', wishlist);
     console.log('Similar Properties Response:', { similarData, similarLoading });
     console.log('Agent Prop for AgentContact:', property?.agentId);
+    console.log('PropertyId Prop for AgentContact:', property?._id);
+        console.log('Agent Prop for AgentContact:', property?.agentId);
     console.log('PropertyId Prop for AgentContact:', property?._id);
   }, [property, isLoading, isError, error, wishlist, similarData, similarLoading]);
 
@@ -364,6 +381,9 @@ const PropertyDetail = () => {
     );
   }
 
+    const { lat, lng } = getCoordinates(property);
+  const address = property.address || property.location?.fullAddress || 'Unknown location';
+
   return (
     <div className="container mx-auto px-6 py-8 bg-gray-100 text-gray-900">
       {/* Title and Actions */}
@@ -385,11 +405,6 @@ const PropertyDetail = () => {
           >
             <HeartIcon size={18} fill={isWishlisted ? 'currentColor' : 'none'} />
             <span>{isWishlisted ? 'Saved' : 'Save'}</span>
-          </button>
-          <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-100">
-            <ShareIcon size={18} />
-            Ascendancy
-            <span>Share</span>
           </button>
         </div>
       </div>
@@ -499,9 +514,10 @@ const PropertyDetail = () => {
             <h3 className="text-xl font-bold mb-4">Location</h3>
             <div className="h-[300px]">
               <Map
-                latitude={property.coordinates ? JSON.parse(property.coordinates).lat : 0}
-                longitude={property.coordinates ? JSON.parse(property.coordinates).lng : 0}
-                address={property.address}
+                latitude={lat}
+                longitude={lng}
+                address={address}
+                placeName={property.location?.placeName}
               />
             </div>
           </div>

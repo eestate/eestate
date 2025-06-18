@@ -185,80 +185,49 @@
 // };
 import { Property } from '../models/Property.js';
 import User from '../models/User.js';
+import sanitize from 'mongo-sanitize';
+import mongoose from 'mongoose';
 
 export const getAllProperties = async (req, res, next) => {
   try {
     const { 
       page = 1, 
       limit = 10, 
-      slug, 
-      minPrice, 
-      maxPrice, 
-      propertyType, 
-      bed, 
-      bathMin, 
-      minSqft, 
-      maxSqft, 
-      keyword 
+      state_district, 
+      propertyType,
+      // Add other filter parameters you need
     } = req.query;
-    const query = { isActive: true };
 
-    if (slug) {
-      query.address = { $regex: slug, $options: 'i' };
+    // Build query object
+    const query = { isActive: true };
+    
+    if (state_district) {
+      query['location.state_district'] = new RegExp(state_district, 'i');
     }
-    if (minPrice || maxPrice) {
-      query.price = {};
-      if (minPrice) query.price.$gte = Number(minPrice);
-      if (maxPrice) query.price.$lte = Number(maxPrice);
-    }
+    
     if (propertyType) {
-      // Map frontend propertyType to backend discriminator values
-      const typeMap = {
-        apartment: 'apartment',
-        house: 'villa',
-        commercial: 'commercial',
-        land: 'plot',
-      };
-      query.propertyType = typeMap[propertyType.toLowerCase()] || propertyType;
+      query.propertyType = propertyType;
     }
-    if (bed) {
-      query.bedrooms = { $gte: Number(bed) };
-    }
-    if (bathMin) {
-      query.bathrooms = { $gte: Number(bathMin) };
-    }
-    if (minSqft || maxSqft) {
-      query.sqft = {};
-      if (minSqft) query.sqft.$gte = Number(minSqft);
-      if (maxSqft) query.sqft.$lte = Number(maxSqft);
-    }
-    if (keyword) {
-      query.$or = [
-        { name: { $regex: keyword, $options: 'i' } },
-        { description: { $regex: keyword, $options: 'i' } },
-      ];
-    }
+
+    // Convert page and limit to numbers
+    const pageNum = Number(page);
+    const limitNum = Number(limit);
 
     const properties = await Property.find(query)
-      .limit(Number(limit))
-      .skip((Number(page) - 1) * Number(limit))
-      .sort({ createdAt: -1 });
-
-    if (properties.length > 0) {
-      await Property.updateMany(
-        { _id: { $in: properties.map(p => p._id) } },
-        { $inc: { views: 1 } }
-      );
-    }
-
+      .skip((pageNum - 1) * limitNum)
+      .limit(limitNum);
+    
     const total = await Property.countDocuments(query);
+    
     res.status(200).json({
       properties,
       total,
-      page: Number(page),
-      pages: Math.ceil(total / Number(limit)),
+      page: pageNum,
+      pages: Math.ceil(total / limitNum)
     });
+    
   } catch (error) {
+    console.error('Error getting properties:', error);
     next(error);
   }
 };
@@ -271,7 +240,7 @@ export const getPropertyById = async (req, res, next) => {
       id,
       { $inc: { views: 1 } },
       { new: true }
-    );
+    ).populate('agentId','name email profilePic phone');
 
     if (!property || !property.isActive) {
       return res.status(404).json({ message: 'Property not found or not active' });
@@ -394,6 +363,98 @@ export const getFeaturedProperties = async (req, res, next) => {
 
     res.status(200).json(properties);
   } catch (error) {
+    next(error);
+  }
+};
+
+export const searchProperties = async (req, res, next) => {
+  try {
+    const {
+      state_district = '',
+      propertyType,
+      page = 1,
+      limit = 10,
+    } = req.query;
+
+    if (!state_district && !propertyType) {
+      return res.status(400).json({ message: 'State district or property type required' });
+    }
+
+    const query = { isActive: true };
+
+    if (state_district) {
+      query['location.state_district'] = { $regex: sanitize(state_district), $options: 'i' };
+    }
+
+    if (propertyType) {
+      const typeMap = {
+        apartment: 'apartment',
+        house: 'villa',
+        land: 'plot',
+        hostel: 'hostel',
+      };
+      query.propertyType = typeMap[propertyType.toLowerCase()] || sanitize(propertyType);
+    }
+
+    const properties = await Property.find(query)
+      .select('name price images address propertyType bedrooms bathrooms sqft status location.placeName location.state_district')
+      .sort({ createdAt: -1 })
+      .limit(Number(limit))
+      .skip((Number(page) - 1) * Number(limit));
+
+    if (properties.length > 0) {
+      await Property.updateMany(
+        { _id: { $in: properties.map(p => p._id) } },
+        { $inc: { views: 1 } }
+      );
+    }
+
+    const total = await Property.countDocuments(query);
+    res.status(200).json({
+      properties,
+      total,
+      page: Number(page),
+      pages: Math.ceil(total / Number(limit)),
+    });
+  } catch (error) {
+    console.error('Search properties error:', error);
+    next(error);
+  }
+};
+
+// Get search suggestions for state_district
+export const getSearchSuggestions = async (req, res, next) => {
+  try {
+    const { state_district = '', propertyType } = req.query;
+
+    if (!state_district) {
+      return res.status(400).json({ message: 'State district required for suggestions' });
+    }
+
+    const query = {
+      'location.state_district': { $regex: sanitize(state_district), $options: 'i' },
+      isActive: true,
+    };
+
+    if (propertyType) {
+      const typeMap = {
+        apartment: 'apartment',
+        house: 'villa',
+        land: 'plot',
+        hostel: 'hostel',
+      };
+      query.propertyType = typeMap[propertyType.toLowerCase()] || sanitize(propertyType);
+    }
+
+    const suggestions = await Property.distinct('location.state_district', query);
+
+    const filteredSuggestions = suggestions
+      .filter(district => district && district.toLowerCase().includes(state_district.toLowerCase()))
+      .slice(0, 5);
+
+    res.status(200).json(filteredSuggestions);
+  } catch (error) {
+    console.error('Search suggestions error:', error);
     next(error);
   }
 };

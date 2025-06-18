@@ -27,6 +27,7 @@
     "js-cookie": "^3.0.5",
     "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.514.0",
+    "mongo-sanitize": "^1.1.0",
     "mongoose": "^8.15.2",
     "multer": "^2.0.1",
     "multer-storage-cloudinary": "^4.0.0",
