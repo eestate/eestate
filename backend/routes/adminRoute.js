@@ -3,6 +3,8 @@ import { protect } from "../middleware/authMiddleware.js";
 import {
   addSubscription,
   agentDetails,
+  allBookings,
+  allProperties,
   allSubscriptionPlans,
   BlockAndUnblock,
   deletePlan,
@@ -24,5 +26,7 @@ adminRouter.put("/editSubscription/:planId", protect, editSubscription);
 adminRouter.get("/getTotalProperties", protect, getTotalProperties);
 adminRouter.get("/getAllActiveUsers", protect, getAllActiveUsers);
 adminRouter.delete("/deletePlan/:planId", protect, deletePlan);
+adminRouter.get("/allProperties", protect, allProperties);
+adminRouter.get("/allBookings", protect, allBookings);
 
 export default adminRouter;

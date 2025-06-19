@@ -63,7 +63,7 @@ export const adminApi = createApi({
     }),
 
     deleteSubscription: builder.mutation({
-      query: (planId ) => {
+      query: (planId) => {
         console.log("delete plan id received", planId);
         return {
           url: `deletePlan/${planId}`,
@@ -82,10 +82,21 @@ export const adminApi = createApi({
       query: () => "/getAllActiveUsers",
       providesTags: ["Activeusers"],
     }),
+
     getTotalProperties: builder.query({
       query: () => "/getTotalProperties",
       providesTags: ["TotalProperty"],
     }),
+
+    getAllProperties: builder.query({
+      query: () => "/allProperties",
+      providesTags: ["allProperties"],
+    }),
+
+    getAllBookings :builder.query({
+      query : () => "/allBookings",
+      providesTags:['allEnquiri-Bookings']
+    })
   }),
 });
 
@@ -100,4 +111,6 @@ export const {
   useGetAllActiveUsersQuery,
   useGetTotalPropertiesQuery,
   useDeleteSubscriptionMutation,
+  useGetAllPropertiesQuery,
+  useGetAllBookingsQuery
 } = adminApi;
