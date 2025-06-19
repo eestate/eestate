@@ -537,7 +537,7 @@ const PropertyDetail = () => {
                     id={prop._id}
                     title={prop.name}
                     price={`$${prop.price.toLocaleString()}`}
-                    location={prop.address}
+                    location={`${prop.location?.placeName}, ${prop.location?.state_district}`}
                     image={prop.images?.[0] || 'https://via.placeholder.com/400'}
                     beds={prop.bedrooms}
                     baths={prop.bathrooms}
