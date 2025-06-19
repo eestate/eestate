@@ -253,7 +253,7 @@ const Profile = () => {
               <h3 className="text-xl font-semibold text-gray-900 mb-2">No favorites yet</h3>
               <p className="text-gray-600 mb-6">Start exploring properties and add them to your wishlist!</p>
               <button
-                onClick={() => navigate("/")}
+                onClick={() => navigate("/properties")}
                 className="bg-gradient-to-r from-gray-800 to-black text-white px-8 py-3 rounded-xl hover:from-gray-900 hover:to-gray-800 transition-all duration-200 font-medium shadow-lg hover:shadow-xl"
               >
                 Browse Properties
@@ -309,7 +309,7 @@ const Profile = () => {
             <h3 className="text-xl font-semibold text-gray-900 mb-2">No bookings yet</h3>
             <p className="text-gray-600 mb-6">When you schedule property viewings, they'll appear here.</p>
             <button
-              onClick={() => navigate("/")}
+              onClick={() => navigate("/properties")}
               className="bg-gradient-to-r from-gray-800 to-black text-white px-8 py-3 rounded-xl hover:from-gray-900 hover:to-gray-800 transition-all duration-200 font-medium shadow-lg hover:shadow-xl"
             >
               Explore Properties

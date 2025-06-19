@@ -101,7 +101,7 @@ const AgentListingPage = () => {
                 <div key={agent._id} className="bg-white rounded-lg overflow-hidden shadow-lg transition-transform hover:scale-[1.02] hover:shadow-xl">
                   <div className="relative h-64 overflow-hidden">
                     <img 
-                      src={agent.profilePic} 
+                      src={agent.profilePic || "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png"} 
                       alt={agent.name} 
                       className="w-full h-full object-cover transition-opacity hover:opacity-90" 
                     />

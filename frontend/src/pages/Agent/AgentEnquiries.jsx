@@ -132,7 +132,7 @@ const AgentEnquiries = () => {
                 : 'text-gray-600 hover:text-gray-900'
             }`}
           >
-            All Properties
+            All Enquiries
           </button>
           <button
             onClick={() => setActiveTab('accepted')}
