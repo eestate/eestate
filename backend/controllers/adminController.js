@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import User from "../models/User.js";
 import { Property } from "../models/Property.js";
 import subPlan from "../models/Subscription.js";
+import Booking from "../models/Booking.js";
 
 export const getAllUser = async (req, res) => {
   const allUsers = await User.find();
@@ -186,6 +187,22 @@ export const getAllActiveUsers = async (req, res) => {
     });
   }
 };
+
+export const allProperties = async (req, res) => {
+  const allProperties = await Property.find().populate("agentId");
+
+  if (!allProperties) {
+    return res.status(404).json({ message: "Properties Not Found" });
+  }
+
+  res.status(201).json({ message: "All Properties", data: allProperties });
+};
+
+export const allBookings = async (req,res)=>{
+  const allBookings=await Booking.find().populate('agentId').populate('userId').populate('propertyId')
+  res.status(200).json({message :"All booking for enquiries api",data:allBookings})
+  console.log('allBookings',allBookings)
+}
 
 // export const TotalRevenue=async (req,res)=>{
 //   try{
