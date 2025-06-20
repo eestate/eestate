@@ -72,7 +72,7 @@ const Home = () => {
     setValue('location', '');
     setValue('propertyType', '');
     setIsSuggestionsOpen(false);
-  };
+  };  
 
   const handleSuggestionClick = (suggestion) => {
     setValue('location', suggestion);
@@ -82,7 +82,7 @@ const Home = () => {
 
   return (
     <div className="min-h-screen mt-8">
-      <div className="relative h-[60vh] w-[1250px] lg:h-[70vh] bg-black flex items-center justify-center m-auto rounded-xl">
+      <div className="video relative h-[60vh] w-[1250px] lg:h-[70vh] bg-black flex items-center justify-center m-auto rounded-xl">
         <div className="absolute inset-0">
           <div className="w-full h-full flex items-center justify-center text-white">
             <p className="text-lg opacity-50">
@@ -198,7 +198,7 @@ const Home = () => {
                 <button className="text-gray-600 hover:underline">view all →</button>
               </div>
             </div>
-            <div className="lg:col-span-2 grid grid-cols-2 gap-4 pl-6">
+            <div className="sec1 lg:col-span-2 grid grid-cols-2 gap-4 pl-6">
               {assets.commercial.map((image, index) => (
                 <img
                   key={`building-${index}`}
@@ -223,7 +223,7 @@ const Home = () => {
                 <button className="text-gray-600 hover:underline">view all →</button>
               </div>
             </div>
-            <div className="lg:col-span-2 grid grid-cols-2 gap-4 order-2 lg:order-1">
+            <div className="sec1 lg:col-span-2 grid grid-cols-2 gap-4 order-2 lg:order-1">
               {assets.building.map((image, index) => (
                 <img
                   key={`building-${index}`}
@@ -248,7 +248,7 @@ const Home = () => {
                 <button className="text-gray-600 hover:underline">view all →</button>
               </div>
             </div>
-            <div className="lg:col-span-2 grid grid-cols-2 gap-4 pl-6">
+            <div className="sec1 lg:col-span-2 grid grid-cols-2 gap-4 pl-6">
               {assets.office.map((image, index) => (
                 <img
                   key={`building-${index}`}

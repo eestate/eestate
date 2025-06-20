@@ -89,7 +89,7 @@ const handleLogout = async () => {
           </h3>
         </div>
 
-        <div className="flex items-center gap-3 cursor-pointer lg:mr-14">
+        <div className="menu flex items-center gap-3 cursor-pointer lg:mr-14">
           {isAuthenticated ? (
             <div className="flex items-center gap-3">
               <DropdownMenu>
