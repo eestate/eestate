@@ -11,6 +11,8 @@ import {
   editSubscription,
   getAllActiveUsers,
   getAllUser,
+  getAllViews,
+  getMonthlyDashboardData,
   getTotalProperties,
   userDetails,
 } from "../controllers/adminController.js";
@@ -25,8 +27,10 @@ adminRouter.get("/getSubscriptions", protect, allSubscriptionPlans);
 adminRouter.put("/editSubscription/:planId", protect, editSubscription);
 adminRouter.get("/getTotalProperties", protect, getTotalProperties);
 adminRouter.get("/getAllActiveUsers", protect, getAllActiveUsers);
+adminRouter.get("/getAllViews",protect,getAllViews)
 adminRouter.delete("/deletePlan/:planId", protect, deletePlan);
 adminRouter.get("/allProperties", protect, allProperties);
 adminRouter.get("/allBookings", protect, allBookings);
+adminRouter.get("/monthly-stats",protect,getMonthlyDashboardData)
 
 export default adminRouter;

@@ -82,6 +82,10 @@ export const adminApi = createApi({
       query: () => "/getAllActiveUsers",
       providesTags: ["Activeusers"],
     }),
+    getAllviews:builder.query({
+      query:()=>"/getAllViews",
+      providesTags:["totalviwersCount"]
+    }),
 
     getTotalProperties: builder.query({
       query: () => "/getTotalProperties",
@@ -96,6 +100,11 @@ export const adminApi = createApi({
     getAllBookings :builder.query({
       query : () => "/allBookings",
       providesTags:['allEnquiri-Bookings']
+    }),
+
+    getMonthlyDashboardStats:builder.query({
+      query:()=>"/monthly-stats",
+      providesTags:['dashboard-chart']
     })
   }),
 });
@@ -112,5 +121,7 @@ export const {
   useGetTotalPropertiesQuery,
   useDeleteSubscriptionMutation,
   useGetAllPropertiesQuery,
-  useGetAllBookingsQuery
+  useGetAllBookingsQuery,
+  useGetMonthlyDashboardStatsQuery,
+  useGetAllviewsQuery,
 } = adminApi;
