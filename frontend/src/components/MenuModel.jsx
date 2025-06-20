@@ -32,7 +32,7 @@ export default function MenuModal({ isOpen, onClose, onLoginClick }) {
           leaveTo="translate-x-full"
         >
           <div className="fixed inset-0 flex">
-            <DialogPanel className="w-full h-full bg-white p-8 lg:p-16">
+            <DialogPanel className="close w-full h-full bg-white p-8 lg:p-16">
               <div className="flex justify-end mb-8 mr-[30px]">
                 <button
                   onClick={onClose}
