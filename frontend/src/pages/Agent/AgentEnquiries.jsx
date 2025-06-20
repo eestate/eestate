@@ -1,4 +1,5 @@
 
+import { useSendMailMutation } from "@/redux/services/AgentApi";
 import { useGetAgentBookingsQuery, useUpdateBookingStatusMutation } from "@/redux/services/BookingApi";
 import React, { useState } from "react";
 import { Toaster, toast } from "sonner";
@@ -16,11 +17,15 @@ const AgentEnquiries = () => {
   });
 
   const [updateBookingStatus] = useUpdateBookingStatusMutation();
+  const [sendMail]=useSendMailMutation()
 
   const handleUpdateStatus = async (enquiryId, status) => {
     try {
       console.log('Updating booking:', { enquiryId, status });
-      await updateBookingStatus({ id: enquiryId, status }).unwrap();
+      // await updateBookingStatus({ id: enquiryId, status }).unwrap();
+      console.log('mail data sendig....',enquiryId,status)
+      let res=await sendMail({enquiryId,status})
+      console.log('res for mail',res)
       toast.success(`Booking ${status} successfully`, {
         position: 'top-right',
         duration: 3000,
