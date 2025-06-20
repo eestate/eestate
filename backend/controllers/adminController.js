@@ -188,6 +188,22 @@ export const getAllActiveUsers = async (req, res) => {
   }
 };
 
+export const getAllViews = async (req, res) => {
+  try {
+    let TotalViews = await User.countDocuments({
+      isBlocked: false,
+      role: {$in :["user","agent"]}
+    });
+    res.status(200).json({ TotalViewsCount: TotalViews });
+  } catch (error) {
+    res.status(500).json({
+      message: "Total views fetching is failed",
+      error: error.message,
+    });
+  }
+};
+
+
 export const allProperties = async (req, res) => {
   const allProperties = await Property.find().populate("agentId");
 
@@ -198,16 +214,107 @@ export const allProperties = async (req, res) => {
   res.status(201).json({ message: "All Properties", data: allProperties });
 };
 
-export const allBookings = async (req,res)=>{
-  const allBookings=await Booking.find().populate('agentId').populate('userId').populate('propertyId')
-  res.status(200).json({message :"All booking for enquiries api",data:allBookings})
-  console.log('allBookings',allBookings)
-}
+export const allBookings = async (req, res) => {
+  const allBookings = await Booking.find()
+    .populate("agentId")
+    .populate("userId")
+    .populate("propertyId");
+  res
+    .status(200)
+    .json({ message: "All booking for enquiries api", data: allBookings });
+  console.log("allBookings", allBookings);
+};
 
-// export const TotalRevenue=async (req,res)=>{
-//   try{
+export const getMonthlyDashboardData = async (req, res) => {
+  try {
+    const currentYear = new Date().getFullYear();
 
-//   }catch(error){
+    const usersByMonth = await User.aggregate([
+      {
+        $match: {
+          isBlocked: false,
+          createdAt: {
+            $gte: new Date(`${currentYear}-01-01`),
+            $lte: new Date(`${currentYear}-12-31`),
+          },
+        },
+      },
+      {
+        $group: {
+          _id: { $month: "$createdAt" },
+          count: { $sum: 1 },
+        },
+      },
+    ]);
 
-//   }
-// }
+    const propertiesByMonth = await Property.aggregate([
+      {
+        $match: {
+          createdAt: {
+            $gte: new Date(`${currentYear}-01-01`),
+            $lte: new Date(`${currentYear}-12-31`),
+          },
+        },
+      },
+      {
+        $group: {
+          _id: { $month: "$createdAt" },
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    const viewsByMonth = await User.aggregate([
+      {
+        $match: {
+          isBlocked: false,
+          role: { $in: ["user", "agent"] },
+          createdAt: {
+            $gte: new Date(`${currentYear}-01-01`),
+            $lte: new Date(`${currentYear}-12-31`),
+          },
+        },
+      },
+      {
+        $group: {
+          _id: { $month: "$createdAt" },
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+    const calculatePercentageChange = (dataArray) => {
+      const thisMonth = new Date().getMonth(); 
+      const current = dataArray[thisMonth] || 0;
+      const previous = dataArray[thisMonth - 1] || 0;
+    
+      if (previous === 0) return current === 0 ? 0 : 100;
+      const change = ((current - previous) / previous) * 10;
+      return parseFloat(change.toFixed(1));
+    };
+    
+
+    const formatData = (dataArray) => {
+      const result = Array(12).fill(0);
+      dataArray.forEach((item) => {
+        result[item._id - 1] = item.count;
+      });
+      return result;
+    };
+
+    res.status(200).json({
+      usersPerMonth: formatData(usersByMonth),
+      propertiesByMonth: formatData(propertiesByMonth),
+      totalViewsCount:formatData(viewsByMonth),
+      statsChange: {
+        users: calculatePercentageChange(formatData(usersByMonth)),
+        properties: calculatePercentageChange(formatData(propertiesByMonth)),
+        views: calculatePercentageChange(formatData(viewsByMonth)),
+      },
+    
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message || "Server error" });
+  }
+};
+
+
