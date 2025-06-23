@@ -58,10 +58,7 @@ basePropertySchema.index({
   price: 1,
   isActive: 1,
 }); // For sorting/filtering listings
-
-basePropertySchema.index({
-  "location.coordinates": "2dsphere",
-}); // For geospatial queries
+ // For geospatial queries
 
 basePropertySchema.index({
   agentId: 1,

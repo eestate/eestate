@@ -3,6 +3,7 @@ import React from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from "recharts";
 import { useGetAgentStatsQuery } from "@/redux/services/AgentApi";
 import { useCheckAuthQuery } from "@/redux/services/authApi";
+import LoadingSpinner from "@/components/LoadingSpinner";
 const AgentDashboard = () => {
   // Check if user is authenticated and an agent
   const { data: authData, isLoading: authLoading } = useCheckAuthQuery();
@@ -11,7 +12,7 @@ const AgentDashboard = () => {
   });
 
   if (authLoading || statsLoading) {
-    return <div className="p-6 bg-gray-50">Loading...</div>;
+    return <LoadingSpinner/>
   }
 
   if (error || !authData || authData.user?.role !== 'agent') {
