@@ -1,16 +1,18 @@
-// chat.routes.js
-import express from "express";
-import { getUsersForSidebar, getMessages, sendMessage } from "../controllers/chatController.js";
-import { protect } from "../middleware/authMiddleware.js";
+import express from 'express';
+import { protect } from '../middleware/authMiddleware.js';
+import { startConversation, getMessages, sendMessage, getConversations } from '../controllers/chatController.js';
+import { uploadChatImage } from '../middleware/chatUploadMiddleware.js';
 
 const router = express.Router();
 
-router.use(protect);
+router.route('/conversations')
+  .get(protect, getConversations)
+  .post(protect, startConversation);
 
-router.get("/users", getUsersForSidebar);
+router.route('/conversations/:conversationId/messages')
+  .get(protect, getMessages)
+  .post(protect, uploadChatImage, sendMessage);
 
-router.get("/messages/:id", getMessages);
-
-router.post("/messages/:id", sendMessage);
+  router.post('/conversations/:conversationId/messages/text', protect, sendMessage);
 
 export default router;
