@@ -31,6 +31,7 @@ import AgentDetails from './pages/admin/AgentDetails'
 import AgentProfile from './pages/Agent/AgentProfile'
 import AgentSubscription from './pages/Agent/AgentSubscription'
 import AdminAboutPage from './pages/admin/AdminAboutPage'
+import AgentSuccess from './pages/Agent/AgentSuccess'
 
 const App = () => {
   const location = useLocation();
@@ -80,6 +81,7 @@ const App = () => {
             <Route path="enquiries" element={<AgentEnquiries />} />
              <Route path="agentprofile" element={<AgentProfile />} />
             <Route path="subscription" element={<AgentSubscription />} />
+            <Route path='subscription/success' element={<AgentSuccess/>}/>
           </Route>
 
           {/* Admin Routes (if needed) */}

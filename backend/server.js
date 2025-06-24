@@ -10,7 +10,7 @@ import authRoutes from './routes/authRoutes.js'
 import userRoutes from './routes/userRoutes.js'
 import agentRoutes from './routes/agentRoutes.js'
 import PropertyRoutes from './routes/propertyRoutes.js'
-// import subscriptionRoutes from './routes/subscriptionRoutes.js'
+import subscriptionRoutes from './routes/subscriptionRoutes.js'
 import chatRoutes from "./routes/chatRoutes.js" 
 import bookingRoutes from './routes/bookingRoutes.js'
 import aboutRoutes from './routes/aboutRoutes.js'
@@ -40,6 +40,7 @@ const initializeDB = async () => {
 
 connectDB().then(initializeDB);
 
+app.use('/api/subscriptions/webhook', express.raw({ type: 'application/json' }));
 
 app.use(cors({
   origin: 'http://localhost:5173',
@@ -61,13 +62,11 @@ app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/agent', agentRoutes);
 app.use('/api/property', PropertyRoutes);
-// app.use('/api', subscriptionRoutes);
+app.use('/api/subscriptions', subscriptionRoutes);
 app.use("/api/chat", chatRoutes);
 app.use('/api/admin',adminRouter)
 app.use('/api/bookings',bookingRoutes);
 app.use('/api/about', aboutRoutes);
-
-
 
 app.listen(PORT, () => {
     console.log(`server running on ${PORT}`);
