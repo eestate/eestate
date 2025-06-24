@@ -13,7 +13,7 @@ const PropertyDetailsModal = ({ isOpen, property, authData, onClose, onEdit, onD
     : 'N/A';
 
   return (
-    <div className="fixed inset-0 bg-gray-300  flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0   flex items-center justify-center z-50 p-4">
       <div className="bg-white   rounded-2xl w-full max-w-md mx-auto max-h-[90vh] overflow-y-auto">
         <div className="relative">
           <img

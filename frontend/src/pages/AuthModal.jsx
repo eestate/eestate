@@ -218,6 +218,7 @@ const handleGoogleSuccess = async (credentialResponse) => {
 
     if (response.ok) {
       localStorage.setItem('user', JSON.stringify(data.user));
+      await refetch()
       toast.success(data.message);
       
       const role = data.user?.role;

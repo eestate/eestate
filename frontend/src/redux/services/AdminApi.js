@@ -34,21 +34,6 @@ export const adminApi = createApi({
       }),
     }),
 
-    
-    editSubscription :builder.mutation({
-      query: (id,planData) => {
-        const { planName, amount, period, features, color } = planData;
-
-        console.log("RTK plan data received:", planData);
-        return {
-          url: `/editSubscription/${id}`,
-          method: "PUT",
-          body: { planName, amount, period, features, color },
-        };
-      },
-      invalidatesTags: ["EditSubscriptions"],
-    }),
-
     addSubscription: builder.mutation({
       query: (planData) => {
         const { planName, amount, period, features, color } = planData;
@@ -63,7 +48,30 @@ export const adminApi = createApi({
       invalidatesTags: ["Subscriptions"], // Add tag to invalidate related queries
     }),
 
-    
+    editSubscription: builder.mutation({
+      query: (planData) => {
+        const { _id, planName, amount, period, features, color } = planData;
+
+        console.log("RTK plan data and id received:", planData);
+        return {
+          url: `/editSubscription/${_id}`,
+          method: "PUT",
+          body: { planName, amount, period, features, color },
+        };
+      },
+      invalidatesTags: ["EditSubscriptions"],
+    }),
+
+    deleteSubscription: builder.mutation({
+      query: (planId) => {
+        console.log("delete plan id received", planId);
+        return {
+          url: `deletePlan/${planId}`,
+          method: "DELETE",
+        };
+      },
+      invalidatesTags: ["Subscriptions"],
+    }),
 
     getAllSubscriptions: builder.query({
       query: () => "/getSubscriptions",
@@ -72,13 +80,32 @@ export const adminApi = createApi({
 
     getAllActiveUsers: builder.query({
       query: () => "/getAllActiveUsers",
-      providesTags: ["Activeusers"]
+      providesTags: ["Activeusers"],
     }),
+    getAllviews:builder.query({
+      query:()=>"/getAllViews",
+      providesTags:["totalviwersCount"]
+    }),
+
     getTotalProperties: builder.query({
       query: () => "/getTotalProperties",
-      providesTags: ["TotalProperty"]
-    })
+      providesTags: ["TotalProperty"],
+    }),
 
+    getAllProperties: builder.query({
+      query: () => "/allProperties",
+      providesTags: ["allProperties"],
+    }),
+
+    getAllBookings :builder.query({
+      query : () => "/allBookings",
+      providesTags:['allEnquiri-Bookings']
+    }),
+
+    getMonthlyDashboardStats:builder.query({
+      query:()=>"/monthly-stats",
+      providesTags:['dashboard-chart']
+    })
   }),
 });
 
@@ -91,6 +118,10 @@ export const {
   useGetAllSubscriptionsQuery,
   useEditSubscriptionMutation,
   useGetAllActiveUsersQuery,
-  useGetTotalPropertiesQuery          
+  useGetTotalPropertiesQuery,
+  useDeleteSubscriptionMutation,
+  useGetAllPropertiesQuery,
+  useGetAllBookingsQuery,
+  useGetMonthlyDashboardStatsQuery,
+  useGetAllviewsQuery,
 } = adminApi;
-

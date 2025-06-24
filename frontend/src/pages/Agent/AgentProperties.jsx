@@ -5,6 +5,7 @@ import PropertyList from '@/components/agent/PropertyList';
 import PropertyDetailsModal from '@/components/agent/PropertyDetailsModal';
 import DeleteConfirmModal from '@/components/agent/DeleteConfirmModal';
 import PropertyFormModal from '@/components/agent/PropertyFormModal';
+import LoadingSpinner from '@/components/LoadingSpinner';
 
 const AgentProperties = () => {
   const { data: authData, isLoading: authLoading } = useCheckAuthQuery();
@@ -188,7 +189,7 @@ const confirmDelete = async () => {
 };
 
   if (authLoading || propertiesLoading) {
-    return <div className="p-6 bg-gray-50">Loading...</div>;
+    return <LoadingSpinner/>
   }
 
   if (propertiesError || !authData || authData.user?.role !== 'agent') {

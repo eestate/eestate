@@ -1,4 +1,5 @@
 
+import { useSendMailMutation } from "@/redux/services/AgentApi";
 import { useGetAgentBookingsQuery, useUpdateBookingStatusMutation } from "@/redux/services/BookingApi";
 import React, { useState } from "react";
 import { Toaster, toast } from "sonner";
@@ -16,11 +17,15 @@ const AgentEnquiries = () => {
   });
 
   const [updateBookingStatus] = useUpdateBookingStatusMutation();
+  const [sendMail]=useSendMailMutation()
 
   const handleUpdateStatus = async (enquiryId, status) => {
     try {
       console.log('Updating booking:', { enquiryId, status });
-      await updateBookingStatus({ id: enquiryId, status }).unwrap();
+      // await updateBookingStatus({ id: enquiryId, status }).unwrap();
+      console.log('mail data sendig....',enquiryId,status)
+      let res=await sendMail({enquiryId,status})
+      console.log('res for mail',res)
       toast.success(`Booking ${status} successfully`, {
         position: 'top-right',
         duration: 3000,
@@ -126,17 +131,17 @@ const AgentEnquiries = () => {
         <div className="flex bg-gray-100 rounded-full p-1">
           <button
             onClick={() => setActiveTab('all')}
-            className={`px-6 py-2 rounded-full text-sm font-medium transition-colors ${
+            className={`font-manrope px-6 py-2 rounded-full text-sm font-medium transition-colors ${
               activeTab === 'all'
                 ? 'bg-black text-white'
                 : 'text-gray-600 hover:text-gray-900'
             }`}
           >
-            All Properties
+            All Enquiries
           </button>
           <button
             onClick={() => setActiveTab('accepted')}
-            className={`px-6 py-2 rounded-full text-sm font-medium transition-colors ${
+            className={`font-manrope px-6 py-2 rounded-full text-sm font-medium transition-colors ${
               activeTab === 'accepted'
                 ? 'bg-black text-white'
                 : 'text-gray-600 hover:text-gray-900'
@@ -146,7 +151,7 @@ const AgentEnquiries = () => {
           </button>
           <button
             onClick={() => setActiveTab('rejected')}
-            className={`px-6 py-2 rounded-full text-sm font-medium transition-colors ${
+            className={`font-manrope px-6 py-2 rounded-full text-sm font-medium transition-colors ${
               activeTab === 'rejected'
                 ? 'bg-black text-white'
                 : 'text-gray-600 hover:text-gray-900'
@@ -162,12 +167,12 @@ const AgentEnquiries = () => {
         <table className="w-full">
           <thead className="bg-gray-200">
             <tr>
-              <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">Id</th>
-              <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">User</th>
-              <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">Property</th>
-              <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">Date/Time</th>
-              <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">Status</th>
-              <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">Actions</th>
+              <th className="font-manrope px-6 py-3 text-left text-sm font-medium text-gray-700">Id</th>
+              <th className="font-manrope px-6 py-3 text-left text-sm font-medium text-gray-700">User</th>
+              <th className="font-manrope px-6 py-3 text-left text-sm font-medium text-gray-700">Property</th>
+              <th className="font-manrope px-6 py-3 text-left text-sm font-medium text-gray-700">Date/Time</th>
+              <th className="font-manrope px-6 py-3 text-left text-sm font-medium text-gray-700">Status</th>
+              <th className="font-manrope px-6 py-3 text-left text-sm font-medium text-gray-700">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
@@ -175,11 +180,11 @@ const AgentEnquiries = () => {
               const enquiry = formatEnquiryData(booking);
               return (
                 <tr key={enquiry.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 text-sm text-gray-900">{enquiry.id}</td>
-                  <td className="px-6 py-4 text-sm text-gray-900">{enquiry.user}</td>
-                  <td className="px-6 py-4 text-sm text-gray-900">{enquiry.property}</td>
-                  <td className="px-6 py-4 text-sm text-gray-900 whitespace-pre-line">{enquiry.dateTime}</td>
-                  <td className="px-6 py-4 text-sm">
+                  <td className="font-manrope px-6 py-4 text-sm text-gray-900">{enquiry.id}</td>
+                  <td className="font-manrope px-6 py-4 text-sm text-gray-900">{enquiry.user}</td>
+                  <td className="font-manrope px-6 py-4 text-sm text-gray-900">{enquiry.property}</td>
+                  <td className="font-manrope px-6 py-4 text-sm text-gray-900 whitespace-pre-line">{enquiry.dateTime}</td>
+                  <td className="font-manrope px-6 py-4 text-sm">
                     <span className={`px-2 py-1 rounded-full text-xs ${
                       enquiry.status === 'confirmed' 
                         ? 'bg-green-100 text-green-800' 

@@ -13,6 +13,8 @@ import {
 } from "chart.js";
 import {
   useGetAllActiveUsersQuery,
+  useGetAllviewsQuery,
+  useGetMonthlyDashboardStatsQuery,
   useGetTotalPropertiesQuery,
 } from "@/redux/services/AdminApi";
 // import {
@@ -42,11 +44,25 @@ const AdminDashboard = () => {
   } = useGetAllActiveUsersQuery();
 
   const {
+    data: TotalViewsData,
+    isLoading: isLoadingViews,
+    isError: isErrorViews,
+    error: errorViews,
+  } = useGetAllviewsQuery();
+
+  const {
     data: propertiesData,
     isLoading: isLoadingProperties,
     isError: isErrorProperties,
     error: errorProperties,
   } = useGetTotalPropertiesQuery();
+
+  const {
+    data: monthlyStats,
+    isLoading: isLoadingStats,
+    isError: isErrorStats,
+    error: errorStats,
+  } = useGetMonthlyDashboardStatsQuery();
 
   // Chart data
   const chartData = {
@@ -67,15 +83,23 @@ const AdminDashboard = () => {
     datasets: [
       {
         label: "Views",
-        data: [400, 600, 450, 800, 650, 900, 750, 850, 950, 1000, 1100, 1200],
+        data: monthlyStats?.totalViewsCount || [],
+        borderColor: "rgb(243, 16, 194)",
+        backgroundColor: "rgba(59, 130, 246, 0.2)",
+        tension: 0.4,
+        fill: true,
+      },
+      {
+        label: "Active Users",
+        data: monthlyStats?.usersPerMonth || [],
         borderColor: "rgb(59, 130, 246)",
         backgroundColor: "rgba(59, 130, 246, 0.2)",
         tension: 0.4,
         fill: true,
       },
       {
-        label: "Properties Listed",
-        data: [200, 300, 250, 400, 350, 500, 450, 550, 600, 650, 700, 800],
+        label: "Property",
+        data: monthlyStats?.propertiesByMonth || [],
         borderColor: "rgb(34, 197, 94)",
         backgroundColor: "rgba(34, 197, 94, 0.2)",
         tension: 0.4,
@@ -84,6 +108,12 @@ const AdminDashboard = () => {
     ],
   };
 
+  const renderChange = (value) => {
+    const isPositive = value >= 0;
+    const arrow = isPositive ? "↗" : "↘";
+    const color = isPositive ? "text-green-500" : "text-red-500";
+    return <p className={`${color} text-sm`}>{arrow} {Math.abs(value)}%</p>;
+  };
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
@@ -148,13 +178,13 @@ const AdminDashboard = () => {
             <div>
               <p className="text-gray-500 text-sm">Total Views</p>
               <p className="text-2xl font-bold">
-                {isLoadingUsers
+                {isLoadingViews
                   ? "Loading..."
-                  : isErrorUsers
+                  : isErrorViews
                   ? "Error"
-                  : activeUsersData?.TotalUser ?? "0"}
+                  : TotalViewsData?.TotalViewsCount ?? "0"}
               </p>
-              <p className="text-green-500 text-sm">↗ 8.5%</p>
+              {monthlyStats && renderChange(monthlyStats?.statsChange?.views)}
             </div>
             <TrendingUp className="text-blue-500" size={24} />
           </div>
@@ -171,7 +201,7 @@ const AdminDashboard = () => {
                   ? "Error"
                   : propertiesData?.Total ?? "0"}
               </p>
-              <p className="text-green-500 text-sm">↗ 3.2%</p>
+              {monthlyStats && renderChange(monthlyStats?.statsChange?.properties)}
             </div>
             <Home className="text-green-500" size={24} />
           </div>
@@ -188,7 +218,7 @@ const AdminDashboard = () => {
                   ? "Error"
                   : activeUsersData?.TotalUser ?? "0"}
               </p>
-              <p className="text-red-500 text-sm">↘ 2.1%</p>
+              {monthlyStats && renderChange(monthlyStats?.statsChange?.users)}
             </div>
             <Users className="text-purple-500" size={24} />
           </div>
@@ -207,7 +237,7 @@ const AdminDashboard = () => {
       </div>
 
       {/* Error Messages */}
-      {(isErrorUsers || isErrorProperties) && (
+      {(isErrorUsers || isErrorProperties || isErrorViews) && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-8">
           <strong>Error:</strong>
           {isErrorUsers && (
@@ -222,6 +252,12 @@ const AdminDashboard = () => {
               {errorProperties?.data?.message || "Unknown error"}
             </p>
           )}
+          {isErrorViews && (
+            <p>
+              Failed to fetch Total viwers:{" "}
+              {errorViews?.data?.message || "unknown Error"}
+            </p>
+          )}
         </div>
       )}
 
@@ -229,7 +265,15 @@ const AdminDashboard = () => {
       <div className="bg-white p-6 rounded-lg shadow-sm border mb-6">
         <h3 className="text-lg font-semibold mb-4">Monthly Trends</h3>
         <div className="h-64">
-          <Line data={chartData} options={chartOptions} />
+          {isLoadingStats ? (
+            <p>Loadingchart..</p>
+          ) : isErrorStats ? (
+            <p className="text-red-500">
+              Chart Error: {errorStats?.data?.message || "Unknown Error"}
+            </p>
+          ) : (
+            <Line data={chartData} options={chartOptions} />
+          )}
         </div>
       </div>
 

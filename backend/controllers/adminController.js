@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import User from "../models/User.js";
 import { Property } from "../models/Property.js";
 import subPlan from "../models/Subscription.js";
+import Booking from "../models/Booking.js";
 
 export const getAllUser = async (req, res) => {
   const allUsers = await User.find();
@@ -114,7 +115,6 @@ export const allSubscriptionPlans = async (req, res) => {
     .json({ message: "All Subscriptions", data: allSubscriptions });
 };
 
-
 export const editSubscription = async (req, res) => {
   const { planId } = req.params;
 
@@ -122,7 +122,7 @@ export const editSubscription = async (req, res) => {
     return res.status(404).json({ message: "Invalid Plan Id" });
   }
 
-  console.log('req.body',req.body);
+  console.log("plan update data", req.body);
 
   const planExist = await subPlan.findById(planId);
 
@@ -145,6 +145,24 @@ export const editSubscription = async (req, res) => {
     .json({ message: "Subscription Plan Updated", data: updatedPlan });
 };
 
+export const deletePlan = async (req, res) => {
+  const { planId } = req.params;
+  console.log("delete paln id", planId);
+
+  if (!mongoose.Types.ObjectId.isValid(planId)) {
+    return res.status(404).json({ message: "Invalid Plan Id" });
+  }
+
+  const planExist = await subPlan.findOne({ _id: planId });
+
+  if (!planExist) {
+    return res.status(404).json({ message: "Plan Not Found" }); // ✅ fixed here
+  }
+
+  await subPlan.findByIdAndDelete(planId);
+
+  res.status(200).json({ message: "Plan deleted successfully" });
+};
 
 export const getTotalProperties = async (req, res) => {
   try {
@@ -157,17 +175,146 @@ export const getTotalProperties = async (req, res) => {
 
 export const getAllActiveUsers = async (req, res) => {
   try {
-    let ActiveUsers = await User.countDocuments({ isBlocked: false, role: "user" });
+    let ActiveUsers = await User.countDocuments({
+      isBlocked: false,
+      role: "user",
+    });
     res.status(200).json({ TotalUser: ActiveUsers });
   } catch (error) {
-    res.status(500).json({ message: "Active users fetching is failed", error: error.message });
+    res.status(500).json({
+      message: "Active users fetching is failed",
+      error: error.message,
+    });
   }
 };
 
-// export const TotalRevenue=async (req,res)=>{
-//   try{
+export const getAllViews = async (req, res) => {
+  try {
+    let TotalViews = await User.countDocuments({
+      isBlocked: false,
+      role: {$in :["user","agent"]}
+    });
+    res.status(200).json({ TotalViewsCount: TotalViews });
+  } catch (error) {
+    res.status(500).json({
+      message: "Total views fetching is failed",
+      error: error.message,
+    });
+  }
+};
 
-//   }catch(error){
 
-//   }
-// }
+export const allProperties = async (req, res) => {
+  const allProperties = await Property.find().populate("agentId");
+
+  if (!allProperties) {
+    return res.status(404).json({ message: "Properties Not Found" });
+  }
+
+  res.status(201).json({ message: "All Properties", data: allProperties });
+};
+
+export const allBookings = async (req, res) => {
+  const allBookings = await Booking.find()
+    .populate("agentId")
+    .populate("userId")
+    .populate("propertyId");
+  res
+    .status(200)
+    .json({ message: "All booking for enquiries api", data: allBookings });
+  console.log("allBookings", allBookings);
+};
+
+export const getMonthlyDashboardData = async (req, res) => {
+  try {
+    const currentYear = new Date().getFullYear();
+
+    const usersByMonth = await User.aggregate([
+      {
+        $match: {
+          isBlocked: false,
+          createdAt: {
+            $gte: new Date(`${currentYear}-01-01`),
+            $lte: new Date(`${currentYear}-12-31`),
+          },
+        },
+      },
+      {
+        $group: {
+          _id: { $month: "$createdAt" },
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    const propertiesByMonth = await Property.aggregate([
+      {
+        $match: {
+          createdAt: {
+            $gte: new Date(`${currentYear}-01-01`),
+            $lte: new Date(`${currentYear}-12-31`),
+          },
+        },
+      },
+      {
+        $group: {
+          _id: { $month: "$createdAt" },
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    const viewsByMonth = await User.aggregate([
+      {
+        $match: {
+          isBlocked: false,
+          role: { $in: ["user", "agent"] },
+          createdAt: {
+            $gte: new Date(`${currentYear}-01-01`),
+            $lte: new Date(`${currentYear}-12-31`),
+          },
+        },
+      },
+      {
+        $group: {
+          _id: { $month: "$createdAt" },
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+    const calculatePercentageChange = (dataArray) => {
+      const thisMonth = new Date().getMonth(); 
+      const current = dataArray[thisMonth] || 0;
+      const previous = dataArray[thisMonth - 1] || 0;
+    
+      if (previous === 0) return current === 0 ? 0 : 100;
+      const change = ((current - previous) / previous) * 10;
+      return parseFloat(change.toFixed(1));
+    };
+    
+
+    const formatData = (dataArray) => {
+      const result = Array(12).fill(0);
+      dataArray.forEach((item) => {
+        result[item._id - 1] = item.count;
+      });
+      return result;
+    };
+
+    res.status(200).json({
+      usersPerMonth: formatData(usersByMonth),
+      propertiesByMonth: formatData(propertiesByMonth),
+      totalViewsCount:formatData(viewsByMonth),
+      statsChange: {
+        users: calculatePercentageChange(formatData(usersByMonth)),
+        properties: calculatePercentageChange(formatData(propertiesByMonth)),
+        views: calculatePercentageChange(formatData(viewsByMonth)),
+      },
+    
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message || "Server error" });
+  }
+};
+
+
