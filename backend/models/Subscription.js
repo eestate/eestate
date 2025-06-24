@@ -1,38 +1,78 @@
-import mongoose from "mongoose";
+// // models/Subscription.js
+// import mongoose from 'mongoose';
 
-const subscriptionPlanSchema = new mongoose.Schema(
+// const subscriptionSchema = new mongoose.Schema({
+//   user: {
+//     type: mongoose.Schema.Types.ObjectId,
+//     ref: 'User',
+//     required: true
+//   },
+//   stripeSubscriptionId: {
+//     type: String,
+//     required: true
+//   },
+//   stripeCustomerId: String,
+//   stripePriceId: String,
+//   stripeProductId: String,
+//   planName: {
+//     type: String,
+//     required: true
+//   },
+//   status: {
+//     type: String,
+//     enum: ['active', 'canceled', 'incomplete', 'incomplete_expired', 'past_due', 'unpaid'],
+//     default: 'active'
+//   },
+//   currentPeriodEnd: Date,
+//   cancelAtPeriodEnd: Boolean
+// }, { timestamps: true });
+
+// export default mongoose.model('Subscription', subscriptionSchema);
+
+import mongoose from 'mongoose';
+
+const subscriptionSchema = new mongoose.Schema(
   {
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+    },
+    stripeSubscriptionId: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+    stripeCustomerId: {
+      type: String,
+      required: true,
+    },
+    stripePriceId: {
+      type: String,
+      required: true,
+    },
+    stripeProductId: {
+      type: String,
+      required: true,
+    },
     planName: {
       type: String,
       required: true,
     },
-    amount: {
+    status: {
       type: String,
-      required: true,
+      enum: ['active', 'canceled', 'incomplete', 'incomplete_expired', 'past_due', 'unpaid', 'trialing'],
+      default: 'incomplete',
     },
-    period: {
-      type: String,
-      enum: ["per month", "per year"],
-      default: "per month",
+    currentPeriodEnd: {
+      type: Date,
     },
-    features: {
-      type: [String],
-      default: [],
+    cancelAtPeriodEnd: {
+      type: Boolean,
+      default: false,
     },
-    color: {
-      type: String,
-      enum: ["gray", "blue", "purple"],
-      default: "gray",
-    },
-    buyers: [
-      {
-        type: mongoose.Types.ObjectId,
-        ref: "User",
-      },
-    ],
   },
   { timestamps: true }
 );
 
-const subPlan = mongoose.model("SubscriptionPlan", subscriptionPlanSchema);
-export default subPlan;
+export default mongoose.model('Subscription', subscriptionSchema); 
