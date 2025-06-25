@@ -1,26 +1,64 @@
 import Message from '../models/Message.js';
 import Conversation from '../models/Conversation.js';
+import User from '../models/User.js';
 import { uploadChatImage } from '../middleware/chatUploadMiddleware.js';
 import { getReceiverSocketId, getIO } from '../config/socket.js';
+import mongoose from 'mongoose';
+
+// Helper function to check if user is an agent
+async function checkIfUserIsAgent(userId) {
+  try {
+    const user = await User.findById(userId).select('role');
+    return user?.role === 'agent';
+  } catch (error) {
+    console.error('Error checking user role:', error);
+    return false;
+  }
+}
 
 export const getConversations = async (req, res) => {
   try {
     const userId = req.user._id;
-    console.log('Fetching conversations for:', { userId });
+    const isAgent = await checkIfUserIsAgent(userId);
 
-    const conversations = await Conversation.find({ participants: userId })
+    let conversations;
+
+    if (isAgent) {
+      // Agent view - show all conversations
+      conversations = await Conversation.find({ 
+        participants: userId,
+        isAgentConversation: true
+      })
       .populate('participants', 'username profilePic name _id')
-      .populate('property', 'title images')
+      .populate('initiatedFromProperty', 'title images')
+      .populate('lastMessage', 'text senderId createdAt')
       .sort('-updatedAt');
+    } else {
+      // User view - show both agent and property conversations
+      conversations = await Conversation.find({ participants: userId })
+        .populate('participants', 'username profilePic name _id')
+        .populate('property', 'title images')
+        .populate('initiatedFromProperty', 'title images')
+        .sort('-updatedAt');
+    }
 
+    // Format the response
     const formattedConversations = conversations.map((conv) => {
       const otherParticipant = conv.participants.find(
         (p) => p._id.toString() !== userId.toString()
       );
+
+      console.log("conv", conv);
+      
+      
       return {
         _id: conv._id,
-        name: otherParticipant?.name || otherParticipant?.username || 'Unknown',
-        profilePic: otherParticipant?.profilePic || null,
+        isAgentConversation: conv.isAgentConversation,
+        otherParticipant: {
+          _id: otherParticipant?._id,
+          name: otherParticipant?.name || otherParticipant?.username || 'Unknown',
+          profilePic: otherParticipant?.profilePic || null,
+        },
         lastMessage: conv.lastMessage
           ? {
               text: conv.lastMessage.text,
@@ -29,56 +67,169 @@ export const getConversations = async (req, res) => {
             }
           : null,
         unreadCount: conv.unreadCount || {},
-        property: conv.property
-          ? { title: conv.property.title, image: conv.property.images?.[0] }
-          : null,
+        properties: conv.isAgentConversation 
+          ? conv.initiatedFromProperty 
+          : conv.property ? [conv.property] : [],
       };
     });
 
-    console.log('Fetched conversations:', formattedConversations.length);
     res.status(200).json(formattedConversations);
   } catch (error) {
-    console.error('Error in getConversations:', {
-      message: error.message,
-      stack: error.stack,
-    });
+    console.error('Error in getConversations:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
 
 export const startConversation = async (req, res) => {
+  const session = await mongoose.startSession();
+  let conversation = null;
+
   try {
     const { participantId, propertyId } = req.body;
     const userId = req.user._id;
-    console.log('Starting conversation:', { userId, participantId, propertyId });
+    const isAgent = await checkIfUserIsAgent(participantId);
 
-    const existingConversation = await Conversation.findOne({
-      participants: { $all: [userId, participantId], $size: 2 },
-      property: propertyId || null,
-    });
-
-    if (existingConversation) {
-      console.log('Existing conversation found:', existingConversation._id);
-      return res.status(200).json(existingConversation);
+    if (!participantId || !mongoose.Types.ObjectId.isValid(participantId)) {
+      return res.status(400).json({ error: "Invalid participant ID" });
+    }
+    if (propertyId && !mongoose.Types.ObjectId.isValid(propertyId)) {
+      return res.status(400).json({ error: "Invalid property ID" });
     }
 
-    const newConversation = await Conversation.create({
-      participants: [userId, participantId],
-      property: propertyId || null,
-      unreadCount: {
-        [userId]: 0,
-        [participantId]: 0,
-      },
+    const sortedParticipants = [userId, participantId].sort((a, b) =>
+      a.toString().localeCompare(b.toString())
+    );
+
+    console.log("Starting conversation", {
+      userId,
+      participantId,
+      propertyId,
+      isAgent,
+      sortedParticipants,
     });
 
-    console.log('New conversation created:', newConversation._id);
-    res.status(201).json(newConversation);
+    let maxRetries = 3;
+    let attempt = 1;
+
+    while (attempt <= maxRetries) {
+      session.startTransaction();
+      try {
+        console.log(`Attempt ${attempt}: Starting transaction`);
+
+        const query = {
+          participants: { $all: sortedParticipants.map(String) },
+          isAgentConversation: isAgent,
+          ...(isAgent ? { property: null } : { property: propertyId || null }),
+        };
+        console.log(`Attempt ${attempt}: Querying for conversation`, query);
+
+        conversation = await Conversation.findOne(query, null, { session });
+
+        if (conversation) {
+          console.log(`Attempt ${attempt}: Found existing conversation`, {
+            conversationId: conversation._id,
+          });
+        } else {
+          console.log(`Attempt ${attempt}: No existing conversation, creating new one`);
+          conversation = await Conversation.create(
+            [
+              {
+                participants: sortedParticipants,
+                property: isAgent ? null : propertyId || null,
+                isAgentConversation: isAgent,
+                initiatedFromProperty: [],
+                unreadCount: {
+                  [userId]: 0,
+                  [participantId]: 0,
+                },
+              },
+            ],
+            { session }
+          );
+          conversation = conversation[0];
+          console.log(`Attempt ${attempt}: Created new conversation`, {
+            conversationId: conversation._id,
+          });
+        }
+
+        await session.commitTransaction();
+        console.log(`Attempt ${attempt}: Transaction committed`);
+        break;
+      } catch (error) {
+        await session.abortTransaction();
+        console.error(`Attempt ${attempt}: Transaction aborted`, {
+          error: error.message,
+          code: error.code,
+        });
+
+        if (
+          error.code === 11000 ||
+          error.errorLabels?.includes("TransientTransactionError")
+        ) {
+          if (attempt === maxRetries) {
+            console.log("Max retries reached, attempting non-transactional find");
+            conversation = await Conversation.findOne({
+              participants: { $all: sortedParticipants.map(String) },
+              isAgentConversation: isAgent,
+              ...(isAgent ? { property: null } : { property: propertyId || null }),
+            });
+            if (conversation) {
+              console.log("Found conversation outside transaction", {
+                conversationId: conversation._id,
+              });
+              break;
+            }
+            return res.status(409).json({
+              error: "Failed to start conversation after multiple attempts",
+              code: "CONVERSATION_CONFLICT",
+            });
+          }
+          attempt++;
+          await new Promise((resolve) => setTimeout(resolve, 200 * Math.pow(2, attempt - 1)));
+          continue;
+        }
+        throw error;
+      } finally {
+        if (session.inTransaction()) {
+          await session.abortTransaction();
+        }
+      }
+    }
+
+    if (isAgent && propertyId) {
+      const propId = new mongoose.Types.ObjectId(propertyId);
+      console.log(`Updating initiatedFromProperty for conversation ${conversation._id}`);
+      await Conversation.updateOne(
+        { _id: conversation._id },
+        { $addToSet: { initiatedFromProperty: propId } }
+      );
+    }
+
+    const populatedConversation = await Conversation.findById(conversation._id)
+      .populate("participants", "username profilePic name _id")
+      .populate("property", "title images")
+      .populate("initiatedFromProperty", "title images");
+
+    return res.status(200).json(populatedConversation);
   } catch (error) {
-    console.error('Error in startConversation:', {
+    console.error("Error in startConversation:", {
       message: error.message,
-      stack: error.stack,
+      code: error.code,
     });
-    res.status(500).json({ error: 'Internal server error' });
+
+    if (error.code === 11000) {
+      return res.status(409).json({
+        error: "Conversation already exists",
+        code: "CONVERSATION_EXISTS",
+      });
+    }
+
+    return res.status(500).json({
+      error: "Internal server error",
+      details: error.message,
+    });
+  } finally {
+    session.endSession();
   }
 };
 

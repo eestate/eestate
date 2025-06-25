@@ -112,6 +112,42 @@ export function initializeSocket(server) {
       }
     });
 
+    // Handle typing indicators
+    socket.on('typing', async ({ conversationId, userId, isTyping }) => {
+      try {
+        const conversation = await Conversation.findById(conversationId);
+        if (!conversation || !conversation.participants.includes(userId)) {
+          return;
+        }
+        
+        // Broadcast typing status to all participants except the sender
+        conversation.participants.forEach(participant => {
+          if (participant.toString() !== userId) {
+            const receiverSocketId = getReceiverSocketId(participant.toString());
+            if (receiverSocketId) {
+              ioInstance.to(receiverSocketId).emit('typing', {
+                conversationId,
+                userId,
+                isTyping
+              });
+            }
+          }
+        });
+      } catch (error) {
+        console.error('Error handling typing event:', error);
+      }
+    });
+
+    // Handle agent presence tracking
+    socket.on('joinAgentChannel', (agentId) => {
+      socket.join(`agent_${agentId}`);
+      console.log(`👨‍💼 User ${userId} joined agent channel ${agentId}`);
+      ioInstance.to(`agent_${agentId}`).emit('agentStatus', { 
+        agentId, 
+        isOnline: true 
+      });
+    });
+
     // Handle disconnection
     socket.on('disconnect', () => {
       console.log('❌ Disconnected:', socket.id);
@@ -119,6 +155,17 @@ export function initializeSocket(server) {
         delete userSocketMap[userId];
         console.log('Updated userSocketMap:', userSocketMap);
         ioInstance.emit('onlineUsers', Object.keys(userSocketMap));
+
+        // Notify agent channels this user left
+        socket.rooms.forEach(room => {
+          if (room.startsWith('agent_')) {
+            const agentId = room.replace('agent_', '');
+            ioInstance.to(room).emit('agentStatus', {
+              agentId,
+              isOnline: false
+            });
+          }
+        });
       }
     });
   });

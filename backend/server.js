@@ -20,7 +20,9 @@ import chatRoutes from './routes/chatRoutes.js'
 
 import subscriptionRoutes from './routes/subscriptionRoutes.js'
 
+
 // Model imports
+
 import { Property } from './models/Property.js';
 
 dotenv.config();
