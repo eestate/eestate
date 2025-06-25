@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 import Home from "./pages/Home";
@@ -33,7 +32,6 @@ import AdminAboutPage from "./pages/admin/AdminAboutPage";
 import AdminPropertyDetails from "./pages/admin/AdminPropertyDetails";
 import BookingDetails from "./pages/admin/BookingDetails";
 import AgentSuccess from './pages/Agent/AgentSuccess'
-
 
 const App = () => {
   const location = useLocation();

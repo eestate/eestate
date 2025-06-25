@@ -14,6 +14,7 @@ const AgentSubscription = () => {
   const { user, userId, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [showAlreadySubscribedModal, setShowAlreadySubscribedModal] = useState(false); // New state for already subscribed modal
 
   const {
     data: products,
@@ -36,6 +37,11 @@ const AgentSubscription = () => {
     if (!isAuthenticated || !userId) {
       alert('Please log in to select a plan');
       navigate('/login');
+      return;
+    }
+
+    if (subscriptionData?.isSubscribed && subscriptionData.subscriptionType !== product.name.toLowerCase()) {
+      setShowAlreadySubscribedModal(true); 
       return;
     }
 
@@ -128,7 +134,6 @@ const AgentSubscription = () => {
     <div className="min-h-screen bg-gray-100 text-gray-900 font-sans py-16">
       {showCancelModal && (
         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
-
           <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full">
             <div className="flex items-center mb-4">
               <AlertTriangle className="w-6 h-6 text-yellow-500 mr-2" />
@@ -154,6 +159,42 @@ const AgentSubscription = () => {
                 className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
               >
                 Confirm Cancellation
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Already Subscribed Modal */}
+      {showAlreadySubscribedModal && (
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full">
+            <div className="flex items-center mb-4">
+              <AlertTriangle className="w-6 h-6 text-yellow-500 mr-2" />
+              <h3 className="text-xl font-semibold">Already Subscribed</h3>
+            </div>
+            <p className="mb-6">
+              You are currently subscribed to the{' '}
+              <span className="font-semibold">
+                {subscriptionData?.subscriptionType.charAt(0).toUpperCase() + subscriptionData?.subscriptionType.slice(1)}
+              </span>{' '}
+              plan. To subscribe to a different plan, please cancel your current subscription first.
+            </p>
+            <div className="flex justify-end space-x-4">
+              <button
+                onClick={() => setShowAlreadySubscribedModal(false)}
+                className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-100"
+              >
+                Go Back
+              </button>
+              <button
+                onClick={() => {
+                  setShowAlreadySubscribedModal(false);
+                  setShowCancelModal(true); // Open cancel subscription modal
+                }}
+                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+              >
+                Cancel Current Subscription
               </button>
             </div>
           </div>
