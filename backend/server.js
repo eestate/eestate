@@ -17,14 +17,9 @@ import aboutRoutes from './routes/aboutRoutes.js';
 import adminRouter from './routes/adminRoute.js';
 import chatRoutes from './routes/chatRoutes.js'
 
-import authRoutes from './routes/authRoutes.js'
-import userRoutes from './routes/userRoutes.js'
-import agentRoutes from './routes/agentRoutes.js'
-import PropertyRoutes from './routes/propertyRoutes.js'
+
 import subscriptionRoutes from './routes/subscriptionRoutes.js'
-import chatRoutes from "./routes/chatRoutes.js" 
-import bookingRoutes from './routes/bookingRoutes.js'
-import aboutRoutes from './routes/aboutRoutes.js'
+
 // Model imports
 import { Property } from './models/Property.js';
 
@@ -99,10 +94,7 @@ app.use('/api/bookings', bookingRoutes);
 app.use('/api/about', aboutRoutes);
 app.use('/api/chat', chatRoutes);
 
-app.listen(PORT, () => {
-    console.log(`server running on ${PORT}`);
-    
-})
+
 // Error handling middleware
 app.use(errorHandler);
 
