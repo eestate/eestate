@@ -31,6 +31,7 @@ import AgentSubscription from "./pages/Agent/AgentSubscription";
 import AdminAboutPage from "./pages/admin/AdminAboutPage";
 import AdminPropertyDetails from "./pages/admin/AdminPropertyDetails";
 import BookingDetails from "./pages/admin/BookingDetails";
+import NotificationAlert from "./components/NotificationAlert";
 import AgentSuccess from './pages/Agent/AgentSuccess'
 
 const App = () => {
@@ -39,6 +40,8 @@ const App = () => {
     location.pathname.startsWith("/agent") ||
     location.pathname.startsWith("/admin");
 
+    const isAgentRoute = location.pathname.startsWith("/agent");
+
   return (
     <div className="flex flex-col min-h-screen">
       {!isAdminOrAgentRoute && <Navbar />}
@@ -46,6 +49,7 @@ const App = () => {
       <RoleRouter />
 
       <main className="flex-grow">
+        {isAgentRoute && <NotificationAlert />}
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={<Home />} />

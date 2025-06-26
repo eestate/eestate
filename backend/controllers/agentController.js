@@ -15,6 +15,7 @@ import {
 } from "../middleware/uploadMiddleware.js";
 import Booking from "../models/Booking.js";
 import { sendMail } from "../utils/sendMail.js";
+import notificationModel from "../models/Notification.js";
 
 // Helper function to get the appropriate model based on property type
 const getModelByType = (propertyType) => {
@@ -653,4 +654,43 @@ export const enquiriesMail = async (req, res) => {
     message: "Mail sending.. work in progress",
     data: currentBooking,
   });
+};
+
+export const getNotificationByAgentId = async (req, res) => {
+  const { agentId } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(agentId)) {
+    return res.status(400).json({ error: "Invalid agentId" });
+  }
+
+  const agentNotyfs = await notificationModel
+    .find({ agentId })
+    .populate("userId")
+    .populate("propertyId")
+    .sort({ createdAt: -1 });
+
+  res
+    .status(201)
+    .json({ message: "Agent All notifications done", data: agentNotyfs });
+};
+
+export const isReadByAgentId = async (req, res) => {
+  const { agentId } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(agentId)) {
+    return res.status(400).json({ error: "Invalid agentId" });
+  }
+
+  const agentNotyfs = await notificationModel.find({ agentId });
+
+  await Promise.all(
+    agentNotyfs.map(async (notyf) => {
+      notyf.isRead = true;
+      await notyf.save();
+    })
+  );
+
+  res
+    .status(200)
+    .json({ message: "All Notification Is Readed", data: agentNotyfs });
 };
