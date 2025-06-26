@@ -32,7 +32,6 @@ const io = initializeSocket(server);
 
 // Make io instance available in routes
 app.set('io', io);
-
 // Database initialization
 const initializeDB = async () => {
   try {
@@ -92,6 +91,7 @@ server.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`🔌 Socket.IO ${io.engine.clientsCount > 0 ? 'ready' : 'initializing'}`);
 });
+
 
 // Handle server shutdown gracefully
 process.on('SIGTERM', () => {
