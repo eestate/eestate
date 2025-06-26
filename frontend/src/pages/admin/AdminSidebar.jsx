@@ -1,5 +1,6 @@
-/* eslint-disable no-unused-vars */
-import React from 'react';
+
+
+import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   BarChart3, 
@@ -7,7 +8,7 @@ import {
   Home, 
   CreditCard, 
   Calendar,
-  Info ,
+  Info,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -15,6 +16,7 @@ export const AdminSidebar = ({ activeTab, setActiveTab }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { logout } = useAuth();
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3, path: '/admin/dashboard' },
@@ -23,7 +25,6 @@ export const AdminSidebar = ({ activeTab, setActiveTab }) => {
     { id: 'subscriptions', label: 'Subscriptions', icon: CreditCard, path: '/admin/subscriptions' },
     { id: 'bookings', label: 'Bookings', icon: Calendar, path: '/admin/bookings' },
     { id: 'about', label: 'About', icon: Info, path: '/admin/about' },
-
   ];
 
   const currentPage = location.pathname.split('/')[2] || 'dashboard';
@@ -33,9 +34,23 @@ export const AdminSidebar = ({ activeTab, setActiveTab }) => {
     setActiveTab(id);
   };
 
-  const handleLogout = async () => {
-    await logout();
-    window.location.href = '/';
+  const handleLogoutClick = () => {
+    setIsModalOpen(true);
+  };
+
+  const handleLogoutConfirm = async () => {
+    try {
+      await logout();
+      window.location.href = '/';
+    } catch (error) {
+      console.error('Logout failed:', error);
+    } finally {
+      setIsModalOpen(false);
+    }
+  };
+
+  const handleModalClose = () => {
+    setIsModalOpen(false);
   };
 
   return (
@@ -74,12 +89,35 @@ export const AdminSidebar = ({ activeTab, setActiveTab }) => {
       
       <div className="p-4 border-t border-gray-200">
         <button 
-          onClick={handleLogout} 
+          onClick={handleLogoutClick} 
           className="w-full flex items-center space-x-3 px-3 py-2 text-red-500 hover:text-red-700"
         >
           <span>Logout</span>
         </button>
       </div>
+
+        {isModalOpen && (
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-xl">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Confirm Logout</h2>
+            <p className="text-gray-600 mb-6">Are you sure you want to log out?</p>
+            <div className="flex justify-end gap-4">
+              <button
+                onClick={handleModalClose}
+                className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleLogoutConfirm}
+                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+              >
+                Log Out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

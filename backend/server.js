@@ -17,7 +17,12 @@ import aboutRoutes from './routes/aboutRoutes.js';
 import adminRouter from './routes/adminRoute.js';
 import chatRoutes from './routes/chatRoutes.js'
 
+
+import subscriptionRoutes from './routes/subscriptionRoutes.js'
+
+
 // Model imports
+
 import { Property } from './models/Property.js';
 
 dotenv.config();
@@ -52,6 +57,9 @@ const initializeDB = async () => {
 // Connect to MongoDB
 connectDB().then(initializeDB);
 
+app.use('/api/subscriptions/webhook', express.raw({ type: 'application/json' }));
+
+
 // Middleware
 app.use(cors({
   origin: process.env.CLIENT_URL || 'http://localhost:5173',
@@ -78,10 +86,15 @@ app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/agent', agentRoutes);
 app.use('/api/property', PropertyRoutes);
+app.use('/api/subscriptions', subscriptionRoutes);
+app.use("/api/chat", chatRoutes);
+app.use('/api/admin',adminRouter)
+app.use('/api/bookings',bookingRoutes);
 app.use('/api/admin', adminRouter);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/about', aboutRoutes);
 app.use('/api/chat', chatRoutes);
+
 
 // Error handling middleware
 app.use(errorHandler);
