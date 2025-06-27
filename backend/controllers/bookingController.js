@@ -1,62 +1,103 @@
+import { getIO } from "../config/socket.js";
+import Booking from "../models/Booking.js";
+import notificationModel from "../models/Notification.js";
+import { Property } from "../models/Property.js";
 
+export const createBooking = async (req, res) => {
+  try {
+    console.log("Booking request body:", req.body);
+    const {
+      userId,
+      agentId,
+      propertyId,
+      name,
+      email,
+      phone,
+      message,
+      date,
+      time,
+    } = req.body;
+    const booking = new Booking({
+      userId,
+      agentId,
+      propertyId,
+      name,
+      email,
+      phone,
+      message,
+      date,
+      time,
+    });
 
-    import Booking from '../models/Booking.js'
-    import  {Property}  from '../models/Property.js';
-    export const createBooking = async (req, res) => {
-    try {
-        console.log('Booking request body:', req.body);
-        const { userId, agentId,propertyId, name, email, phone, message, date, time } = req.body;
-        const booking = new Booking({
-        userId,
-        agentId,
-        propertyId,
-        name,
-        email,
-        phone,
-        message,
-        date,
-        time,
-        });
-        await booking.save();
-        res.status(201).json({ message: 'Booking scheduled successfully', booking });
-    } catch (error) {
-        res.status(500).json({ message: 'Error scheduling booking', error: error.message });
-    }
-    };
+    const notyf = new notificationModel({
+      propertyId,
+      agentId,
+      userId,
+      enquiryId: booking._id,
+    });
 
-    export const getAgentBookings = async (req, res) => {
-    try {
-        const { agentId } = req.params;
-        const bookings = await Booking.find({ agentId }).populate('userId', 'name email').populate('propertyId','name address price propertyType');
-        res.status(200).json(bookings);
-    } catch (error) {
-        res.status(500).json({ message: 'Error fetching bookings', error: error.message });
-    }
-    };
+    const io = getIO();
+    io.emit("enquiryNotification", {
+      title: `${name} has sent an enquiry.`,
+      message: `aaaaaaa`,
+      propertyId,
+      agentId
+    });
+    
+    console.log("notifcation send..");
+    console.log("New Notification", notyf);
 
+    await booking.save();
+    await notyf.save();
+    res
+      .status(201)
+      .json({ message: "Booking scheduled successfully", booking });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error scheduling booking", error: error.message });
+  }
+};
+
+export const getAgentBookings = async (req, res) => {
+  try {
+    const { agentId } = req.params;
+    const bookings = await Booking.find({ agentId })
+      .sort({ createdAt: -1 })
+      .populate("userId", "name email")
+      .populate("propertyId", "name address price propertyType");
+    res.status(200).json(bookings);
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error fetching bookings", error: error.message });
+  }
+};
 
 export const updateBookingStatus = async (req, res) => {
   try {
-    console.log('Handling PATCH /bookings/:id/status', req.params, req.body); 
+    console.log("Handling PATCH /bookings/:id/status", req.params, req.body);
     const { id } = req.params;
     const { status } = req.body;
 
-    const validStatuses = ['pending', 'confirmed', 'cancelled'];
+    const validStatuses = ["pending", "confirmed", "cancelled"];
     if (!validStatuses.includes(status)) {
-      return res.status(400).json({ message: 'Invalid status value' });
+      return res.status(400).json({ message: "Invalid status value" });
     }
 
     const booking = await Booking.findById(id);
     if (!booking) {
-      return res.status(404).json({ message: 'Booking not found' });
+      return res.status(404).json({ message: "Booking not found" });
     }
 
     if (!req.user) {
-      return res.status(401).json({ message: 'User not authenticated' });
+      return res.status(401).json({ message: "User not authenticated" });
     }
 
     if (booking.agentId.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: 'Not authorized to update this booking' });
+      return res
+        .status(403)
+        .json({ message: "Not authorized to update this booking" });
     }
 
     booking.status = status;
@@ -70,7 +111,13 @@ export const updateBookingStatus = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Error in updateBookingStatus:', error.message);
-    res.status(500).json({ message: 'Error updating booking status', error: error.message });
+    console.error("Error in updateBookingStatus:", error.message);
+    res
+      .status(500)
+      .json({ message: "Error updating booking status", error: error.message });
   }
 };
+
+
+
+

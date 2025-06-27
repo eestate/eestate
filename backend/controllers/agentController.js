@@ -15,6 +15,7 @@ import {
 } from "../middleware/uploadMiddleware.js";
 import Booking from "../models/Booking.js";
 import { sendMail } from "../utils/sendMail.js";
+import notificationModel from "../models/Notification.js";
 
 // Helper function to get the appropriate model based on property type
 const getModelByType = (propertyType) => {
@@ -526,13 +527,21 @@ export const enquiriesMail = async (req, res) => {
   const currentBooking = await Booking.findById(enquiryId).populate(
     "propertyId"
   );
-
   if (!currentBooking) {
     return res.status(404).json({ message: "Booking Not Found" });
   }
 
-  const date = new Date();
+  // ✅ Log before update
+  console.log("Before Update - Booking Status:", currentBooking.status);
 
+  // ✅ Update status and save
+  currentBooking.status = status;
+  await currentBooking.save();
+
+  // ✅ Log after update
+  console.log("After Update - Booking Status:", currentBooking.status);
+
+  const date = new Date();
   const formattedDate = `${date.toLocaleDateString("en-IN", {
     timeZone: "Asia/Kolkata",
   })} ${date.toLocaleTimeString("en-IN", {
@@ -649,8 +658,47 @@ export const enquiriesMail = async (req, res) => {
 
   console.log("req.body data", enquiryId, status);
 
-  res.status(201).json({
-    message: "Mail sending.. work in progress",
+  res.status(200).json({
+    message: "Booking status updated and email sent",
     data: currentBooking,
   });
+};
+
+export const getNotificationByAgentId = async (req, res) => {
+  const { agentId } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(agentId)) {
+    return res.status(400).json({ error: "Invalid agentId" });
+  }
+
+  const agentNotyfs = await notificationModel
+    .find({ agentId })
+    .populate("userId")
+    .populate("propertyId")
+    .sort({ createdAt: -1 });
+
+  res
+    .status(201)
+    .json({ message: "Agent All notifications done", data: agentNotyfs });
+};
+
+export const isReadByAgentId = async (req, res) => {
+  const { agentId } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(agentId)) {
+    return res.status(400).json({ error: "Invalid agentId" });
+  }
+
+  const agentNotyfs = await notificationModel.find({ agentId });
+
+  await Promise.all(
+    agentNotyfs.map(async (notyf) => {
+      notyf.isRead = true;
+      await notyf.save();
+    })
+  );
+
+  res
+    .status(200)
+    .json({ message: "All Notification Is Readed", data: agentNotyfs });
 };
