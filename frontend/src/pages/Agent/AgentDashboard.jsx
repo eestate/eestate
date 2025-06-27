@@ -1,9 +1,10 @@
 import { Building, FileText, Home, Bell, MessageSquare, User } from "lucide-react";
-import React from "react";
+import React, { useEffect } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from "recharts";
 import { useGetAgentStatsQuery } from "@/redux/services/AgentApi";
 import { useCheckAuthQuery } from "@/redux/services/authApi";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import { useGetAgentBookingsQuery } from "@/redux/services/BookingApi";
 const AgentDashboard = () => {
   // Check if user is authenticated and an agent
   const { data: authData, isLoading: authLoading } = useCheckAuthQuery();
@@ -11,7 +12,29 @@ const AgentDashboard = () => {
     skip: !authData || authData.user?.role !== 'agent',
   });
 
-  if (authLoading || statsLoading) {
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const agentId = user?._id;
+
+ const {
+    data: bookings = [],
+    isLoading,
+  } = useGetAgentBookingsQuery(agentId, {
+    skip: !agentId,
+  });
+
+    const { totalProperties, activeProperties, soldProperties, totalEnquiries, monthlyStats } = statsData || {};
+
+
+
+  useEffect(()=>{
+    console.log('all bookings',bookings)
+  },[bookings])
+
+  useEffect(()=>{
+  console.log('statsData',statsData)
+},[statsData])
+
+  if (authLoading || statsLoading || isLoading) {
     return <LoadingSpinner/>
   }
 
@@ -19,7 +42,9 @@ const AgentDashboard = () => {
     return <div className="p-6 bg-gray-50">Unauthorized or error fetching data</div>;
   }
 
-  const { totalProperties, activeProperties, soldProperties, totalEnquiries, monthlyStats } = statsData || {};
+
+
+  
 
   return (
     <div className="p-6 bg-gray-50">

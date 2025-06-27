@@ -7,6 +7,9 @@ import {
   getAgentStats,
   enquiriesMail,
   changePropertyStatus
+  getNotificationByAgentId,
+  isReadByAgentId,
+
 } from "../controllers/agentController.js";
 import { protect } from "../middleware/authMiddleware.js";
 import { upload } from "../middleware/uploadMiddleware.js";
@@ -23,5 +26,7 @@ router.patch(
   "/:id/status",
   changePropertyStatus
 );
+router.get('/notyf/:agentId',protect,getNotificationByAgentId)
+router.put('/notyf-isRead/:agentId',protect,isReadByAgentId)
 
 export default router;
