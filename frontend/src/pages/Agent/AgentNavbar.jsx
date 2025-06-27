@@ -17,6 +17,7 @@ import {
   useNotificationIsReadMutation,
 } from "@/redux/services/AgentApi";
 import { format } from "timeago.js";
+import { useRef } from "react";
 
 export const AgentNavbar = () => {
   const UserDetails = JSON.parse(localStorage.getItem("user"));
@@ -87,12 +88,6 @@ export const AgentNavbar = () => {
   };
 
 
-
-  const handleProfileClick = () => {
-    isAuthenticated ? navigate("/agent/agentprofile") : setIsLoginOpen(true);
-    setIsLogoutConfirmOpen(false);
-    window.location.href = '/';
-  };
 
 
 
