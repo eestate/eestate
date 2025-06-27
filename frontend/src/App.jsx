@@ -32,7 +32,10 @@ import AdminAboutPage from "./pages/admin/AdminAboutPage";
 import AdminPropertyDetails from "./pages/admin/AdminPropertyDetails";
 import BookingDetails from "./pages/admin/BookingDetails";
 import NotificationAlert from "./components/NotificationAlert";
+
+
 import AgentSuccess from './pages/Agent/AgentSuccess'
+
 
 const App = () => {
   const location = useLocation();

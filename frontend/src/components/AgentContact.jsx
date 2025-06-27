@@ -21,11 +21,13 @@ import {
   useSendTextMessageMutation,
   useStartConversationMutation,
 } from "@/redux/services/ChatApi";
+
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { UserIcon, MailIcon, Send, PhoneIcon, MessageSquareIcon, CalendarIcon, ClockIcon, XIcon, Paperclip, SendIcon } from 'lucide-react';
 import { initializeSocket } from '@/utils/socket';
 import { useCreateBookingMutation } from '@/redux/services/BookingApi';
 import { useGetMessagesQuery, useSendMessageMutation, useSendTextMessageMutation, useStartConversationMutation } from '@/redux/services/ChatApi';
+
 
 const AgentStatusIndicator = ({ isOnline }) => (
   <div className="flex items-center mb-2">
@@ -55,9 +57,11 @@ const AgentContact = ({ agent, propertyId }) => {
   const showSnackbar = (message, severity = "success") => {
     setSnackbar({ open: true, message, severity });
   };
+
   const [agentTyping, setAgentTyping] = useState(false);
   const [agentOnline, setAgentOnline] = useState(false);
   const typingTimeoutRef = useRef(null);
+
 
   const [formData, setFormData] = useState({
     name: userData?.name || "",
@@ -100,6 +104,7 @@ const AgentContact = ({ agent, propertyId }) => {
       return () => socketInstance.disconnect();
     }
 
+
     if (!userId) return;
 
     const socketInstance = initializeSocket(userId);
@@ -110,6 +115,7 @@ const AgentContact = ({ agent, propertyId }) => {
         socketInstance.disconnect();
       }
     };
+
 
   }, [userId]);
 
@@ -130,6 +136,7 @@ const AgentContact = ({ agent, propertyId }) => {
         setError("Failed to start conversation. Please try again.");
         console.log("Failed to start conversation", error);
 
+
     if (!socket || !agent?._id) return;
 
     const handleAgentOnline = (agentId) => {
@@ -141,6 +148,7 @@ const AgentContact = ({ agent, propertyId }) => {
     const handleAgentOffline = (agentId) => {
       if (agentId === agent._id) {
         setAgentOnline(false);
+
 
       }
     };
@@ -216,7 +224,11 @@ const AgentContact = ({ agent, propertyId }) => {
 
       if (data.conversationId.toString() === currentConversationId.toString()) {
 
+
+      if (data.conversationId.toString() === currentConversationId.toString()) {
+
       if (data.conversationId === currentConversationId) {
+
 
         refetchMessages();
       }
@@ -225,6 +237,7 @@ const AgentContact = ({ agent, propertyId }) => {
     socket.on("newMessage", handleNewMessage);
     return () => socket.off("newMessage", handleNewMessage);
   }, [socket, currentConversationId, refetchMessages]);
+
 
   // Handle typing indicators
   useEffect(() => {
@@ -276,6 +289,7 @@ const AgentContact = ({ agent, propertyId }) => {
     handleTypingIndicator(text.trim().length > 0);
   };
 
+
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!newMessage.trim() && !imageFile) return;
@@ -320,6 +334,7 @@ const AgentContact = ({ agent, propertyId }) => {
       setError(`Failed to send message: ${error.message || "Unknown error"}`);
     } finally {
       setNewMessage("");
+
 
 
       setNewMessage('');
@@ -370,6 +385,7 @@ const AgentContact = ({ agent, propertyId }) => {
           <img
             src={agent.profilePic || "https://via.placeholder.com/150"}
 
+
     <div className="bg-white rounded-lg shadow-md p-6 max-w-2xl mx-auto">
       <div className='mb-6'>
         <div className="flex items-center">
@@ -383,7 +399,9 @@ const AgentContact = ({ agent, propertyId }) => {
             <h3 className="text-xl font-semibold">{agent.name}</h3>
             <p className="text-gray-600">Property Agent</p>
 
+
             <AgentStatusIndicator isOnline={agentOnline} />
+
 
           </div>
         </div>
@@ -397,6 +415,26 @@ const AgentContact = ({ agent, propertyId }) => {
             <MailIcon size={16} className="mr-2 text-gray-600" />
             <span>{agent.email}</span>
           </div>
+
+        </div>
+
+        <div className="mb-6">
+          <button
+            onClick={() => setShowChat(!showChat)}
+            className="w-full bg-blue-600 text-white py-2 rounded-md flex justify-center items-center hover:bg-blue-700 transition-colors"
+          >
+            <MessageSquareIcon size={16} className="font-manrope mr-2" />
+            {showChat ? "Show Schedule Form" : "Chat with Agent"}
+          </button>
+        </div>
+
+        {showChat ? (
+          <div className="bg-gray-100 p-4 rounded-md mb-6 h-[500px] flex flex-col">
+            <div className="flex justify-between items-center mb-4">
+              <h4 className="font-manrope text-lg font-semibold">
+                Chat with {agent.name}
+              </h4>
+
         </div>
 
         <div className="mb-6">
@@ -438,6 +476,7 @@ const AgentContact = ({ agent, propertyId }) => {
                 alt="Preview"
                 className="max-w-xs max-h-32 rounded-md"
               />
+
 
               <button
                 onClick={() => setShowChat(false)}
@@ -516,6 +555,15 @@ const AgentContact = ({ agent, propertyId }) => {
                           })}
                         </p>
                       </div>
+
+                    </div>
+                  );
+                })
+              )}
+              <div ref={chatEndRef} />
+            </div>
+
+
                     </div>
                   );
                 })
@@ -587,6 +635,7 @@ const AgentContact = ({ agent, propertyId }) => {
           </div>
 
 
+
             <form onSubmit={handleSendMessage} className="flex gap-2">
               <div className="flex-1 flex items-center">
                 <label className="p-2 text-gray-500 hover:text-gray-700 cursor-pointer">
@@ -639,11 +688,13 @@ const AgentContact = ({ agent, propertyId }) => {
                 className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
 
+
                 value={newMessage}
                 onChange={handleMessageChange}
                 placeholder="Type your message..."
                 className="font-manrope flex-1 p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                 disabled={messagesLoading || sendingMessage || sendingTextMessage}
+
 
               />
             </div>

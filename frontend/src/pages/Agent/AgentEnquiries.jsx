@@ -1,6 +1,4 @@
 
-
-
 /* eslint-disable no-unused-vars */
 import React, { useState } from "react";
 import { Toaster, toast } from "sonner";
@@ -66,7 +64,7 @@ const AgentEnquiries = () => {
       case "rejected":
         return bookings.filter((booking) => booking.status === "cancelled");
       default:
-        return bookings;
+        return bookings.filter((booking) => booking.status === "pending");
     }
   };
 
@@ -154,7 +152,11 @@ const AgentEnquiries = () => {
               }`}
             >
               {tab === "all"
+
+                ? "New Enquiries"
+
                 ? "All Enquiries"
+
                 : tab === "accepted"
                 ? "Confirmed"
                 : "Cancelled"}
@@ -182,10 +184,21 @@ const AgentEnquiries = () => {
               const enquiry = formatEnquiryData(booking);
               return (
                 <tr key={enquiry.id} className="hover:bg-gray-50">
+
+                  <td className="px-4 py-3 max-w-[120px] truncate">
+                    {enquiry.id}
+                  </td>
+                  <td className="px-4 py-3">{enquiry.user}</td>
+                  <td className="px-4 py-3">{enquiry.property}</td>
+                  <td className="px-4 py-3 whitespace-pre-line">
+                    {enquiry.dateTime}
+                  </td>
+
                   <td className="px-4 py-3 max-w-[120px] truncate">{enquiry.id}</td>
                   <td className="px-4 py-3">{enquiry.user}</td>
                   <td className="px-4 py-3">{enquiry.property}</td>
                   <td className="px-4 py-3 whitespace-pre-line">{enquiry.dateTime}</td>
+
                   <td className="px-4 py-3">
                     <span
                       className={`px-2 py-1 rounded-full text-xs ${
@@ -201,6 +214,102 @@ const AgentEnquiries = () => {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex flex-wrap gap-2">
+
+                      {activeTab === "all" && (
+                        <>
+                          <button
+                            className="p-1 hover:bg-gray-100 rounded"
+                            title="Confirmed"
+                            onClick={() =>
+                              handleUpdateStatus(enquiry.id, "confirmed")
+                            }
+                          >
+                            <svg
+                              className="w-5 h-5 text-green-600"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M5 13l4 4L19 7"
+                              />
+                            </svg>
+                          </button>
+                          <button
+                            className="p-1 hover:bg-gray-100 rounded"
+                            title="Cancel"
+                            onClick={() =>
+                              handleUpdateStatus(enquiry.id, "cancelled")
+                            }
+                          >
+                            <svg
+                              className="w-5 h-5 text-red-600"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M6 18L18 6M6 6l12 12"
+                              />
+                            </svg>
+                          </button>
+                        </>
+                      )}
+
+                      {activeTab === "accepted" && (
+                        <button
+                          className="p-1 hover:bg-gray-100 rounded"
+                          title="Cancel"
+                          onClick={() =>
+                            handleUpdateStatus(enquiry.id, "cancelled")
+                          }
+                        >
+                          <svg
+                            className="w-5 h-5 text-red-600"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M6 18L18 6M6 6l12 12"
+                            />
+                          </svg>
+                        </button>
+                      )}
+
+                      {activeTab === "rejected" && (
+                        <button
+                          className="p-1 hover:bg-gray-100 rounded"
+                          title="Confirmed"
+                          onClick={() =>
+                            handleUpdateStatus(enquiry.id, "confirmed")
+                          }
+                        >
+                          <svg
+                            className="w-5 h-5 text-green-600"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M5 13l4 4L19 7"
+                            />
+                          </svg>
+                        </button>
+                      )}
+
                       <button
                         className="p-1 hover:bg-gray-100 rounded"
                         onClick={() => handleViewDetails(enquiry)}
@@ -226,6 +335,7 @@ const AgentEnquiries = () => {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                         </svg>
                       </button>
+
                     </div>
                   </td>
                   <td className="px-4 py-3 text-right text-xs text-gray-500 whitespace-nowrap">
@@ -239,7 +349,13 @@ const AgentEnquiries = () => {
         {filteredEnquiries.length === 0 && (
           <div className="text-center py-8">
             <p className="text-gray-500">
+
+              {isLoading
+                ? "Loading enquiries..."
+                : "No enquiries found for this category."}
+
               {isLoading ? "Loading enquiries..." : "No enquiries found for this category."}
+
             </p>
           </div>
         )}

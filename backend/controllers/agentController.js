@@ -527,13 +527,21 @@ export const enquiriesMail = async (req, res) => {
   const currentBooking = await Booking.findById(enquiryId).populate(
     "propertyId"
   );
-
   if (!currentBooking) {
     return res.status(404).json({ message: "Booking Not Found" });
   }
 
-  const date = new Date();
+  // ✅ Log before update
+  console.log("Before Update - Booking Status:", currentBooking.status);
 
+  // ✅ Update status and save
+  currentBooking.status = status;
+  await currentBooking.save();
+
+  // ✅ Log after update
+  console.log("After Update - Booking Status:", currentBooking.status);
+
+  const date = new Date();
   const formattedDate = `${date.toLocaleDateString("en-IN", {
     timeZone: "Asia/Kolkata",
   })} ${date.toLocaleTimeString("en-IN", {
@@ -650,8 +658,8 @@ export const enquiriesMail = async (req, res) => {
 
   console.log("req.body data", enquiryId, status);
 
-  res.status(201).json({
-    message: "Mail sending.. work in progress",
+  res.status(200).json({
+    message: "Booking status updated and email sent",
     data: currentBooking,
   });
 };
