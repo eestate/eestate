@@ -1,15 +1,7 @@
 "use client";
+import { Building, FileText, Home, Bell, MessageSquare, User, ChevronDown } from "lucide-react";
+import React, { useState, useEffect } from "react";
 
-import {
-  Building,
-  FileText,
-  Home,
-  Bell,
-  MessageSquare,
-  User,
-  ChevronDown,
-} from "lucide-react";
-import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -45,6 +37,10 @@ export const AgentNavbar = () => {
     useAuth();
   const notificationRef = useRef(null);
   const bellRef = useRef(null);
+
+  const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
+  const { user, isAuthenticated, isLoading, logout, isLoggingOut, refetch } = useAuth();
+
 
   useEffect(() => {
     refetch();
@@ -82,12 +78,30 @@ export const AgentNavbar = () => {
   const handleNavigation = (tabId) => navigate(`/agent/${tabId}`);
 
   const handleLogout = async () => {
+    setIsLogoutConfirmOpen(true);
+  };
+
+  const confirmLogout = async () => {
     await logout();
     window.location.href = "/";
   };
 
   const handleProfileClick = () => {
     isAuthenticated ? navigate("/agent/agentprofile") : setIsLoginOpen(true);
+  };
+
+  const handleProfileClick = () => {
+    isAuthenticated ? navigate("/agent/agentprofile") : setIsLoginOpen(true);
+    setIsLogoutConfirmOpen(false);
+    window.location.href = '/';
+  };
+
+  const handleProfileClick = () => {
+    if (isAuthenticated) {
+      navigate('/agent/agentprofile');
+    } else {
+      setIsLoginOpen(true);
+    }
   };
 
   const handleSubscriptionClick = () => {
@@ -158,38 +172,6 @@ export const AgentNavbar = () => {
                         Notifications
                       </h3>
                     </div>
-
-                    {/* {notifications.length > 0 ? (
-                      <ul className="divide-y divide-gray-200">
-                        {notifications.map((notification) => (
-                          <li
-                            key={notification?._id}
-                            className="px-4 py-3 hover:bg-gray-50 cursor-pointer"
-                          >
-                            <p className="text-sm text-gray-700 font-medium">
-                              {notification?.userId?.name} made an enquiry for
-                            </p>
-                            <p className="text-sm text-gray-800">
-                              <span className="font-semibold">
-                                {notification?.propertyId?.name}
-                              </span>
-                            </p>
-                            <p className="text-xs text-gray-500 mt-1">
-                              {notification?.propertyId?.location?.fullAddress}
-                            </p>
-                            <p className="text-xs text-gray-400 mt-1">
-                              {format(notification?.createdAt)}{" "}
-                           
-                            </p>
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <div className="p-4 text-sm text-gray-500 text-center">
-                        No notifications
-                      </div>
-                    )} */}
-
                     <ul className="divide-y divide-gray-200">
                       {notifications.map((notification) => (
                         <li
@@ -296,6 +278,32 @@ export const AgentNavbar = () => {
       </nav>
 
       <AuthModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
+
+      {isLogoutConfirmOpen && (
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-sm w-full">
+            <h2 className="text-lg font-semibold mb-4">Confirm Logout</h2>
+            <p className="text-gray-600 mb-6">Are you sure you want to log out?</p>
+            <div className="flex justify-end space-x-4">
+              <button
+                onClick={() => setIsLogoutConfirmOpen(false)}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmLogout}
+                disabled={isLoggingOut}
+                className={`px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 ${
+                  isLoggingOut ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+              >
+                {isLoggingOut ? 'Logging out...' : 'Logout'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };

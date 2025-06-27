@@ -119,5 +119,3 @@ export const updateBookingStatus = async (req, res) => {
 };
 
 
-
-

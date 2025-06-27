@@ -27,9 +27,11 @@ export const useAuth = () => {
       return false;
     }
   };
+  const userId = data?.user?._id || data?.user?.id;
 
   return {
     user: data?.user,
+    userId,
     role: data?.user?.role,
     isAuthenticated: !!data?.isAuthenticated,
     isLoading,
