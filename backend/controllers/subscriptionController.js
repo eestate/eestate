@@ -39,6 +39,27 @@ export const getStripeProducts = async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch products' });
   }
 };
+
+export const checkSubscriptionStatus = async (req, res) => {
+  try {
+    const subscription = await Subscription.findOne({
+      user: req.user._id,
+      status: 'active',
+    });
+
+    return res.status(200).json({
+      hasActiveSubscription: !!subscription,
+      subscription: subscription || null,
+    });
+  } catch (error) {
+    console.error('Subscription check error:', error);
+    return res.status(500).json({
+      error: 'Server error',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined,
+    });
+  }
+};
+
 export const createCheckoutSession = async (req, res) => {
   try {
     const { planName, userId, email } = req.body;

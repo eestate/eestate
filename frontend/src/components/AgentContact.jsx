@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useRef } from "react";
 import {
   UserIcon,
@@ -48,6 +49,10 @@ const AgentContact = ({ agent, propertyId }) => {
   const [error, setError] = useState(null);
   const chatEndRef = useRef(null);
   const [currentConversationId, setCurrentConversationId] = useState(null);
+
+  const [agentTyping, setAgentTyping] = useState(false);
+  const [agentOnline, setAgentOnline] = useState(false);
+  const typingTimeoutRef = useRef(null);
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: "",
@@ -92,6 +97,12 @@ const AgentContact = ({ agent, propertyId }) => {
   // Initialize socket connection
   useEffect(() => {
 
+    if (!userId) return;
+
+    const socketInstance = initializeSocket(userId);
+    setSocket(socketInstance);
+
+
     if (messagesError) {
       setError("Failed to load messages. Please try again.");
     }
@@ -110,17 +121,31 @@ const AgentContact = ({ agent, propertyId }) => {
     const socketInstance = initializeSocket(userId);
     setSocket(socketInstance);
 
+
     return () => {
       if (socketInstance) {
         socketInstance.disconnect();
       }
     };
 
-
   }, [userId]);
 
   // Handle agent presence updates
   useEffect(() => {
+    if (!socket || !agent?._id) return;
+
+    const handleAgentOnline = (agentId) => {
+      if (agentId === agent._id) {
+        setAgentOnline(true);
+      }
+    };
+
+    const handleAgentOffline = (agentId) => {
+      if (agentId === agent._id) {
+        setAgentOnline(false);
+      }
+    };
+
 
     if (!showChat || !agent?._id || !propertyId || !userId || !socket) return;
 
@@ -153,10 +178,17 @@ const AgentContact = ({ agent, propertyId }) => {
       }
     };
 
+
     socket.on('agentOnline', handleAgentOnline);
     socket.on('agentOffline', handleAgentOffline);
 
     return () => {
+
+      socket.off('agentOnline', handleAgentOnline);
+      socket.off('agentOffline', handleAgentOffline);
+    };
+  }, [socket, agent?._id]);
+
 
       if (socket && currentConversationId) {
         socket.emit("leaveConversation", currentConversationId);
@@ -200,6 +232,17 @@ const AgentContact = ({ agent, propertyId }) => {
   }, [agent?._id, propertyId, userId, socket,userData?.token, startConversation]);
 
   useEffect(() => {
+    if (showChat) {
+      initializeChat();
+    }
+
+    return () => {
+      if (socket && currentConversationId) {
+        socket.emit('leaveConversation', currentConversationId);
+      }
+    };
+  }, [showChat, initializeChat, socket, currentConversationId]);
+
 
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, messagesLoading]);
@@ -221,6 +264,8 @@ const AgentContact = ({ agent, propertyId }) => {
     if (!socket || !currentConversationId) return;
 
     const handleNewMessage = (data) => {
+
+      if (data.conversationId === currentConversationId) {
 
       if (data.conversationId.toString() === currentConversationId.toString()) {
 
@@ -290,6 +335,56 @@ const AgentContact = ({ agent, propertyId }) => {
   };
 
 
+  // Handle typing indicators
+  useEffect(() => {
+    if (!socket || !currentConversationId) return;
+
+    const handleTyping = (data) => {
+      if (data.conversationId === currentConversationId && data.userId !== userId) {
+        setAgentTyping(data.isTyping);
+      }
+    };
+
+    socket.on('typing', handleTyping);
+    return () => {
+      socket.off('typing', handleTyping);
+    };
+  }, [socket, currentConversationId, userId]);
+
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  // Handle sending typing indicators
+  const handleTypingIndicator = useCallback((isTyping) => {
+    if (!socket || !currentConversationId) return;
+    
+    clearTimeout(typingTimeoutRef.current);
+    
+    if (isTyping) {
+      socket.emit('typing', {
+        conversationId: currentConversationId,
+        userId,
+        isTyping: true
+      });
+    } else {
+      typingTimeoutRef.current = setTimeout(() => {
+        socket.emit('typing', {
+          conversationId: currentConversationId,
+          userId,
+          isTyping: false
+        });
+      }, 1000);
+    }
+  }, [socket, currentConversationId, userId]);
+
+  const handleMessageChange = (e) => {
+    const text = e.target.value;
+    setNewMessage(text);
+    handleTypingIndicator(text.trim().length > 0);
+  };
+
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!newMessage.trim() && !imageFile) return;
@@ -301,6 +396,7 @@ const AgentContact = ({ agent, propertyId }) => {
     try {
       let result;
       if (newMessage.trim() && !imageFile) {
+        result = await sendTextMessage({
 
         await sendTextMessage({
 
@@ -315,6 +411,7 @@ const AgentContact = ({ agent, propertyId }) => {
         if (imageFile) formData.append("image", imageFile);
 
 
+        result = await sendMessage({
         await sendMessage({
 
         result = await sendMessage({
@@ -398,6 +495,7 @@ const AgentContact = ({ agent, propertyId }) => {
           <div>
             <h3 className="text-xl font-semibold">{agent.name}</h3>
             <p className="text-gray-600">Property Agent</p>
+            <AgentStatusIndicator isOnline={agentOnline} />
 
 
             <AgentStatusIndicator isOnline={agentOnline} />
