@@ -89,13 +89,7 @@ export const AgentNavbar = () => {
 
 
 
-  const handleProfileClick = () => {
-    if (isAuthenticated) {
-      navigate('/agent/agentprofile');
-    } else {
-      setIsLoginOpen(true);
-    }
-  };
+
 
   const handleSubscriptionClick = () => {
     isAuthenticated ? navigate("/agent/subscription") : setIsLoginOpen(true);
