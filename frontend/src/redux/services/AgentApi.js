@@ -158,7 +158,6 @@ export const {
   useEditPropertyMutation,
   useDeletePropertyMutation,
   useChangePropertyStatusMutation,
-  useSendMailMutation
   useSendMailMutation,
   useGetNotyfQuery,
   useNotificationIsReadMutation,

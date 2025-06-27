@@ -6,7 +6,7 @@ import {
   deleteProperty,
   getAgentStats,
   enquiriesMail,
-  changePropertyStatus
+  changePropertyStatus,
   getNotificationByAgentId,
   isReadByAgentId,
 

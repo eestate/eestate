@@ -151,15 +151,11 @@ const AgentEnquiries = () => {
                   : "text-gray-600 hover:text-gray-900"
               }`}
             >
-              {tab === "all"
-
-                ? "New Enquiries"
-
-                ? "All Enquiries"
-
-                : tab === "accepted"
-                ? "Confirmed"
-                : "Cancelled"}
+        {tab === "all"
+          ? "All Enquiries"
+          : tab === "accepted"
+          ? "Confirmed"
+          : "Cancelled"}
             </button>
           ))}
         </div>
