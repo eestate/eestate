@@ -15,6 +15,7 @@ import {
 } from "../middleware/uploadMiddleware.js";
 import Booking from "../models/Booking.js";
 import { sendMail } from "../utils/sendMail.js";
+import Subscription from "../models/Subscription.js";
 
 // Helper function to get the appropriate model based on property type
 const getModelByType = (propertyType) => {
@@ -37,6 +38,22 @@ export const createProperty = async (req, res) => {
   session.startTransaction();
 
   try {
+     const agentId = req.user?._id;
+
+    // 🔒 Check subscription
+    const subscription = await Subscription.findOne({
+      user: agentId,
+      status: 'active',
+      currentPeriodEnd: { $gt: new Date() }, // Check that it's not expired
+    });
+
+    if (!subscription) {
+      await session.abortTransaction();
+      return res.status(403).json({
+        error: "You must have an active subscription to create a property.",
+      });
+    }
+
     console.log(
       "Received files:",
       req.files?.map((f) => ({ filename: f.originalname, size: f.size }))
@@ -653,4 +670,51 @@ export const enquiriesMail = async (req, res) => {
     message: "Mail sending.. work in progress",
     data: currentBooking,
   });
+};
+
+
+export const changePropertyStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user?.id;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid property ID",
+      });
+    }
+
+    const property = await Property.findById(id);
+    if (!property) {
+      return res.status(404).json({
+        success: false,
+        message: "Property not found",
+      });
+    }
+
+  
+
+    const currentStatus = property.status?.toLowerCase();
+    const newStatus = currentStatus === 'available' ? 'sold' : 'available';
+
+    property.status = newStatus;
+    await property.save();
+
+    return res.status(200).json({
+      success: true,
+      message: `Property status updated to "${newStatus}" successfully`,
+      data: {
+        propertyId: property._id,
+        status: newStatus,
+      },
+    });
+  } catch (error) {
+    console.error("Error updating property status:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
 };

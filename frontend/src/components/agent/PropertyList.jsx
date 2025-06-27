@@ -1,11 +1,26 @@
 import React from 'react';
 import { Plus } from 'lucide-react';
 import PropertyCard from './PropertyCard';
+import SubscriptionRequiredModal from './SubscriptionRequiredModal'
 
-
-
-const PropertyList = ({ properties, activeFilter, setActiveFilter, setIsModalOpen, handlePropertyClick }) => {
+const PropertyList = ({ 
+  properties, 
+  activeFilter, 
+  setActiveFilter, 
+  setIsModalOpen, 
+  handlePropertyClick,
+  hasActiveSubscription 
+}) => {
+  const [showSubscriptionModal, setShowSubscriptionModal] = React.useState(false);
   const filteredProperties = properties?.filter(property => property.status === activeFilter) || [];
+
+  const handleAddPropertyClick = () => {
+    if (hasActiveSubscription) {
+      setIsModalOpen(true);
+    } else {
+      setShowSubscriptionModal(true);
+    }
+  };
 
   return (
     <>
@@ -29,13 +44,19 @@ const PropertyList = ({ properties, activeFilter, setActiveFilter, setIsModalOpe
           </button>
         </div>
         <button
-          onClick={() => setIsModalOpen(true)}
+          onClick={handleAddPropertyClick}
           className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors flex items-center space-x-2"
         >
           <Plus className="w-4 h-4" />
           <span>Add Property</span>
         </button>
       </div>
+      
+      <SubscriptionRequiredModal 
+        isOpen={showSubscriptionModal}
+        onClose={() => setShowSubscriptionModal(false)}
+      />
+      
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredProperties.map((property) => (
           <PropertyCard key={property._id} property={property} onClick={() => handlePropertyClick(property)} />

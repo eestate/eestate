@@ -6,6 +6,7 @@ import {
   deleteProperty,
   getAgentStats,
   enquiriesMail,
+  changePropertyStatus
 } from "../controllers/agentController.js";
 import { protect } from "../middleware/authMiddleware.js";
 import { upload } from "../middleware/uploadMiddleware.js";
@@ -18,5 +19,9 @@ router.put("/:id", protect, upload.array("images", 5), editProperty);
 router.delete("/:id", protect, deleteProperty);
 router.get("/stats", protect, getAgentStats);
 router.post("/sendMail", protect, enquiriesMail);
+router.patch(
+  "/:id/status",
+  changePropertyStatus
+);
 
 export default router;

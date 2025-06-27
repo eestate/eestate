@@ -110,7 +110,13 @@ export const agentApi = createApi({
       },
       invalidatesTags: ["Properties", "AgentStats"],
     }),
-
+ changePropertyStatus: builder.mutation({
+  query: ({ id, status }) => ({
+    url: `/${id}/status`,
+    method: "PATCH",
+  }),
+  invalidatesTags: ["Properties", "AgentStats"],
+}),   
     sendMail: builder.mutation({
       query: ({ enquiryId, status }) => {
         console.log("enquiry id and status recived", enquiryId, status);
@@ -133,5 +139,6 @@ export const {
   useCreatePropertyMutation,
   useEditPropertyMutation,
   useDeletePropertyMutation,
+  useChangePropertyStatusMutation,
   useSendMailMutation
 } = agentApi;

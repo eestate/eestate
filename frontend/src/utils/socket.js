@@ -137,3 +137,46 @@ export const sendSocketMessage = (event, data) => {
   socket.emit(event, data);
   return true;
 };
+
+// Add these new functions to your frontend socket utils
+export const sendTypingIndicator = (conversationId, userId, isTyping) => {
+  if (!socket) return false;
+  socket.emit('typing', { conversationId, userId, isTyping });
+  return true;
+};
+
+export const joinAgentChannel = (agentId) => {
+  if (socket) {
+    socket.emit('joinAgentChannel', agentId);
+  }
+};
+
+export const listenForAgentStatus = (callback) => {
+  if (!socket) return;
+  
+  const handler = ({ agentId, isOnline }) => {
+    callback(agentId, isOnline);
+  };
+  
+  socket.on('agentStatus', handler);
+  
+  // Return cleanup function
+  return () => {
+    socket.off('agentStatus', handler);
+  };
+};
+
+export const listenForTyping = (callback) => {
+  if (!socket) return;
+  
+  const handler = ({ conversationId, userId, isTyping }) => {
+    callback(conversationId, userId, isTyping);
+  };
+  
+  socket.on('typing', handler);
+  
+  // Return cleanup function
+  return () => {
+    socket.off('typing', handler);
+  };
+};

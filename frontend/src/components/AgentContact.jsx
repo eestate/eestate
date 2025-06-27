@@ -1,8 +1,17 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { UserIcon, MailIcon,Send, PhoneIcon, MessageSquareIcon, CalendarIcon, ClockIcon, XIcon, Paperclip, SendIcon } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { UserIcon, MailIcon, Send, PhoneIcon, MessageSquareIcon, CalendarIcon, ClockIcon, XIcon, Paperclip, SendIcon } from 'lucide-react';
 import { initializeSocket } from '@/utils/socket';
 import { useCreateBookingMutation } from '@/redux/services/BookingApi';
 import { useGetMessagesQuery, useSendMessageMutation, useSendTextMessageMutation, useStartConversationMutation } from '@/redux/services/ChatApi';
+
+const AgentStatusIndicator = ({ isOnline }) => (
+  <div className="flex items-center mb-2">
+    <div className={`w-3 h-3 rounded-full mr-2 ${isOnline ? 'bg-green-500' : 'bg-gray-500'}`} />
+    <span className="text-sm text-gray-600">
+      {isOnline ? 'Online' : 'Offline'}
+    </span>
+  </div>
+);
 
 const AgentContact = ({ agent, propertyId }) => {
   const userData = JSON.parse(localStorage.getItem('user'));
@@ -14,6 +23,9 @@ const AgentContact = ({ agent, propertyId }) => {
   const [error, setError] = useState(null);
   const chatEndRef = useRef(null);
   const [currentConversationId, setCurrentConversationId] = useState(null);
+  const [agentTyping, setAgentTyping] = useState(false);
+  const [agentOnline, setAgentOnline] = useState(false);
+  const typingTimeoutRef = useRef(null);
 
   const [formData, setFormData] = useState({
     name: userData?.name || '',
@@ -37,83 +49,88 @@ const AgentContact = ({ agent, propertyId }) => {
     refetch: refetchMessages,
   } = useGetMessagesQuery(currentConversationId, { skip: !currentConversationId });
 
+  // Initialize socket connection
   useEffect(() => {
-    console.log('Messages:', messages);
-    if (messagesError) {
-      console.error('Error fetching messages:', messagesErrorDetails);
-      setError('Failed to load messages. Please try again.');
-    }
-  }, [messages, messagesError, messagesErrorDetails]);
+    if (!userId) return;
 
-  useEffect(() => {
-    if (userId) {
-      const socketInstance = initializeSocket(userId);
-      setSocket(socketInstance);
+    const socketInstance = initializeSocket(userId);
+    setSocket(socketInstance);
 
-      return () => {
+    return () => {
+      if (socketInstance) {
         socketInstance.disconnect();
-        console.log('Socket disconnected');
-      };
-    }
+      }
+    };
   }, [userId]);
 
+  // Handle agent presence updates
   useEffect(() => {
-    if (!showChat || !agent?._id || !propertyId || !userId || !socket) {
-      return;
-    }
+    if (!socket || !agent?._id) return;
 
-    const initializeChat = async () => {
-      try {
-        console.log('Starting conversation:', { participantId: agent._id, propertyId, userId });
-        const conversation = await startConversation({
-          participantId: agent._id,
-          propertyId,
-        }).unwrap();
-
-        console.log('Conversation started:', conversation);
-        setCurrentConversationId(conversation._id.toString());
-
-        // Join conversation
-        socket.emit('joinConversation', conversation._id.toString());
-        console.log('Joined conversation room:', `conversation:${conversation._id}`);
-      } catch (error) {
-        console.error('Failed to start conversation:', {
-          message: error.message,
-          status: error.status,
-          data: error.data,
-        });
-        setError('Failed to start conversation. Please try again.');
+    const handleAgentOnline = (agentId) => {
+      if (agentId === agent._id) {
+        setAgentOnline(true);
       }
     };
 
-    initializeChat();
+    const handleAgentOffline = (agentId) => {
+      if (agentId === agent._id) {
+        setAgentOnline(false);
+      }
+    };
+
+    socket.on('agentOnline', handleAgentOnline);
+    socket.on('agentOffline', handleAgentOffline);
+
+    return () => {
+      socket.off('agentOnline', handleAgentOnline);
+      socket.off('agentOffline', handleAgentOffline);
+    };
+  }, [socket, agent?._id]);
+
+  // Initialize chat when shown
+  const initializeChat = useCallback(async () => {
+    if (!agent?._id || !propertyId || !userId || !socket) return;
+
+    try {
+
+
+
+      const conversation = await startConversation({
+        participantId: agent._id,
+        propertyId,
+        isAgent: true
+      }).unwrap();
+
+      setCurrentConversationId(conversation._id.toString());
+      socket.emit('joinConversation', conversation._id.toString());
+      socket.emit('joinAgentChannel', agent._id);
+      
+
+    } catch (error) {
+      console.error('Failed to start conversation:', error);
+      setError(error.data?.message || 'Failed to start conversation. Please try again.');
+    }
+  }, [agent?._id, propertyId, userId, socket,userData?.token, startConversation]);
+
+  useEffect(() => {
+    if (showChat) {
+      initializeChat();
+    }
 
     return () => {
       if (socket && currentConversationId) {
         socket.emit('leaveConversation', currentConversationId);
-        console.log('Left conversation room:', `conversation:${currentConversationId}`);
       }
     };
-  }, [showChat, agent?._id, propertyId, userId, socket, startConversation]);
+  }, [showChat, initializeChat, socket, currentConversationId]);
 
-  useEffect(() => {
-    if (currentConversationId) {
-      console.log('Refetching messages for:', currentConversationId);
-      refetchMessages();
-    }
-  }, [currentConversationId, refetchMessages]);
-
-  useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, messagesLoading]);
-
+  // Handle incoming messages
   useEffect(() => {
     if (!socket || !currentConversationId) return;
 
     const handleNewMessage = (data) => {
-      console.log('Received newMessage:', data);
-      if (data.conversationId.toString() === currentConversationId.toString()) {
-        console.log('Refetching messages for conversation:', data.conversationId);
+      if (data.conversationId === currentConversationId) {
         refetchMessages();
       }
     };
@@ -124,6 +141,56 @@ const AgentContact = ({ agent, propertyId }) => {
     };
   }, [socket, currentConversationId, refetchMessages]);
 
+  // Handle typing indicators
+  useEffect(() => {
+    if (!socket || !currentConversationId) return;
+
+    const handleTyping = (data) => {
+      if (data.conversationId === currentConversationId && data.userId !== userId) {
+        setAgentTyping(data.isTyping);
+      }
+    };
+
+    socket.on('typing', handleTyping);
+    return () => {
+      socket.off('typing', handleTyping);
+    };
+  }, [socket, currentConversationId, userId]);
+
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  // Handle sending typing indicators
+  const handleTypingIndicator = useCallback((isTyping) => {
+    if (!socket || !currentConversationId) return;
+    
+    clearTimeout(typingTimeoutRef.current);
+    
+    if (isTyping) {
+      socket.emit('typing', {
+        conversationId: currentConversationId,
+        userId,
+        isTyping: true
+      });
+    } else {
+      typingTimeoutRef.current = setTimeout(() => {
+        socket.emit('typing', {
+          conversationId: currentConversationId,
+          userId,
+          isTyping: false
+        });
+      }, 1000);
+    }
+  }, [socket, currentConversationId, userId]);
+
+  const handleMessageChange = (e) => {
+    const text = e.target.value;
+    setNewMessage(text);
+    handleTypingIndicator(text.trim().length > 0);
+  };
+
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!newMessage.trim() && !imageFile) return;
@@ -133,9 +200,9 @@ const AgentContact = ({ agent, propertyId }) => {
     }
 
     try {
+      let result;
       if (newMessage.trim() && !imageFile) {
-        console.log('Sending text-only message:', { conversationId: currentConversationId, text: newMessage });
-        await sendTextMessage({
+        result = await sendTextMessage({
           conversationId: currentConversationId,
           text: newMessage,
         }).unwrap();
@@ -144,8 +211,7 @@ const AgentContact = ({ agent, propertyId }) => {
         if (newMessage.trim()) formData.append('text', newMessage);
         if (imageFile) formData.append('image', imageFile);
 
-        console.log('Sending message with image:', { conversationId: currentConversationId });
-        await sendMessage({
+        result = await sendMessage({
           conversationId: currentConversationId,
           body: formData,
         }).unwrap();
@@ -154,19 +220,16 @@ const AgentContact = ({ agent, propertyId }) => {
       socket.emit('newMessage', {
         conversationId: currentConversationId,
         senderId: userId,
+        messageId: result._id,
       });
-    } catch (error) {
-      console.error('Failed to send message:', {
-        message: error.message,
-        status: error.status,
-        data: error.data,
-        stack: error.stack,
-      });
-      setError(`Failed to send message: ${error.message || 'Unknown error'}`);
-    } finally {
-      console.log('Clearing inputs');
+
       setNewMessage('');
       setImageFile(null);
+      handleTypingIndicator(false);
+
+    } catch (error) {
+      console.error('Failed to send message:', error);
+      setError(error.data?.message || 'Failed to send message');
     }
   };
 
@@ -233,15 +296,18 @@ const AgentContact = ({ agent, propertyId }) => {
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6 max-w-2xl mx-auto">
-      <div className="flex items-center mb-6">
-        <img
-          src={agent.profilePic || 'https://via.placeholder.com/150'}
-          alt={agent.name}
-          className="w-16 h-16 rounded-full object-cover mr-4"
-        />
-        <div>
-          <h3 className="text-xl font-semibold">{agent.name}</h3>
-          <p className="text-gray-600">Property Agent</p>
+      <div className='mb-6'>
+        <div className="flex items-center">
+          <img
+            src={agent.profilePic || 'https://via.placeholder.com/150'}
+            alt={agent.name}
+            className="w-16 h-16 rounded-full object-cover mr-4"
+          />
+          <div>
+            <h3 className="text-xl font-semibold">{agent.name}</h3>
+            <p className="text-gray-600">Property Agent</p>
+            <AgentStatusIndicator isOnline={agentOnline} />
+          </div>
         </div>
       </div>
 
@@ -277,7 +343,9 @@ const AgentContact = ({ agent, propertyId }) => {
               <XIcon size={20} />
             </button>
           </div>
+          
           {error && <p className="text-red-500 text-center mb-2">{error}</p>}
+          
           {imageFile && (
             <div className="relative mb-2">
               <img
@@ -304,40 +372,55 @@ const AgentContact = ({ agent, propertyId }) => {
                 Start a conversation with the agent
               </p>
             ) : (
-              messages.map((msg) => {
-                const senderId = typeof msg.senderId === 'object' ? msg.senderId?._id.toString() : msg.senderId.toString();
-                const isCurrentUser = senderId === userId;
-                const messageDate = new Date(msg.createdAt);
-                console.log('Rendering message:', msg);
+              <>
+{messages.map((msg) => {
+  // Safely get senderId whether it's populated or just an ID string
+  const senderId = msg.senderId?._id?.toString() || msg.senderId?.toString();
+  const isCurrentUser = senderId === userId;
+  const messageDate = msg.createdAt ? new Date(msg.createdAt) : new Date();
 
-                return (
-                  <div
-                    key={msg._id}
-                    className={`mb-3 flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`}
-                  >
-                    <div
-                      className={`font-manrope max-w-[70%] p-3 rounded-lg ${isCurrentUser ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-800'}`}
-                    >
-                      {msg.text && <p>{msg.text}</p>}
-                      {msg.image && (
-                        <img
-                          src={msg.image}
-                          alt="Chat image"
-                          className="max-w-full rounded-md mt-2"
-                        />
-                      )}
-                      <p className="font-manrope text-xs mt-1 opacity-70">
-                        {messageDate.toLocaleTimeString([], {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
-                      </p>
+  return (
+    <div
+      key={msg._id}
+      className={`mb-3 flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`}
+    >
+      <div
+        className={`font-manrope max-w-[70%] p-3 rounded-lg ${
+          isCurrentUser ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-800'
+        }`}
+      >
+        {msg.text && <p>{msg.text}</p>}
+        {msg.image && (
+          <img
+            src={msg.image}
+            alt="Chat image"
+            className="max-w-full rounded-md mt-2"
+          />
+        )}
+        <p className="font-manrope text-xs mt-1 opacity-70">
+          {messageDate.toLocaleTimeString([], {
+            hour: '2-digit',
+            minute: '2-digit',
+          })}
+        </p>
+      </div>
+    </div>
+  );
+})}
+                {agentTyping && (
+                  <div className="flex mb-2 justify-start">
+                    <div className="bg-gray-200 text-gray-800 p-2 rounded-lg">
+                      <div className="flex space-x-1">
+                        <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"></div>
+                        <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                        <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
+                      </div>
                     </div>
                   </div>
-                );
-              })
+                )}
+                <div ref={chatEndRef} />
+              </>
             )}
-            <div ref={chatEndRef} />
           </div>
 
           <form onSubmit={handleSendMessage} className="flex gap-2">
@@ -354,7 +437,7 @@ const AgentContact = ({ agent, propertyId }) => {
               <input
                 type="text"
                 value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
+                onChange={handleMessageChange}
                 placeholder="Type your message..."
                 className="font-manrope flex-1 p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                 disabled={messagesLoading || sendingMessage || sendingTextMessage}

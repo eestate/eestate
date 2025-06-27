@@ -1,20 +1,18 @@
 
 import React, { useEffect, useState } from 'react';
-import { DollarSign, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+import { DollarSign, CheckCircle, AlertTriangle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import {
   useGetStripeProductsQuery,
   useCreateCheckoutSessionMutation,
   useVerifySubscriptionMutation,
-  useCancelSubscriptionMutation,
 } from '@/redux/services/SubscriptionApi';
 
 const AgentSubscription = () => {
   const { user, userId, isAuthenticated } = useAuth();
   const navigate = useNavigate();
-  const [showCancelModal, setShowCancelModal] = useState(false);
-  const [showAlreadySubscribedModal, setShowAlreadySubscribedModal] = useState(false); // New state for already subscribed modal
+  const [showAlreadySubscribedModal, setShowAlreadySubscribedModal] = useState(false);
 
   const {
     data: products,
@@ -25,7 +23,6 @@ const AgentSubscription = () => {
   
   const [createCheckoutSession] = useCreateCheckoutSessionMutation();
   const [verifySubscription, { data: subscriptionData }] = useVerifySubscriptionMutation();
-  const [cancelSubscription] = useCancelSubscriptionMutation();
 
   useEffect(() => {
     if (isAuthenticated && user?.role === 'agent' && userId) {
@@ -40,8 +37,8 @@ const AgentSubscription = () => {
       return;
     }
 
-    if (subscriptionData?.isSubscribed && subscriptionData.subscriptionType !== product.name.toLowerCase()) {
-      setShowAlreadySubscribedModal(true); 
+    if (subscriptionData?.isSubscribed) {
+      setShowAlreadySubscribedModal(true);
       return;
     }
 
@@ -57,19 +54,6 @@ const AgentSubscription = () => {
     } catch (error) {
       console.error('Checkout error:', error);
       alert(error.data?.error || 'Payment initialization failed. Please try again.');
-    }
-  };
-
-  const handleCancelSubscription = async () => {
-    try {
-      await cancelSubscription({ subscriptionId: subscriptionData.subscriptionId }).unwrap();
-      setShowCancelModal(false);
-      alert('Subscription cancellation requested');
-      refetchProducts();
-      verifySubscription({ userId });
-    } catch (error) {
-      console.error('Cancellation error:', error);
-      alert(error.data?.error || 'Failed to cancel subscription');
     }
   };
 
@@ -132,39 +116,6 @@ const AgentSubscription = () => {
 
   return (
     <div className="min-h-screen bg-gray-100 text-gray-900 font-sans py-16">
-      {showCancelModal && (
-        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full">
-            <div className="flex items-center mb-4">
-              <AlertTriangle className="w-6 h-6 text-yellow-500 mr-2" />
-              <h3 className="text-xl font-semibold">Confirm Cancellation</h3>
-            </div>
-            <p className="mb-6">
-              Are you sure you want to cancel your subscription? 
-              {subscriptionData?.cancelAtPeriodEnd ? (
-                ' Your subscription will remain active until the end of the current billing period.'
-              ) : (
-                ' This will cancel your subscription immediately.'
-              )}
-            </p>
-            <div className="flex justify-end space-x-4">
-              <button
-                onClick={() => setShowCancelModal(false)}
-                className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-100"
-              >
-                Go Back
-              </button>
-              <button
-                onClick={handleCancelSubscription}
-                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-              >
-                Confirm Cancellation
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Already Subscribed Modal */}
       {showAlreadySubscribedModal && (
         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
@@ -178,23 +129,14 @@ const AgentSubscription = () => {
               <span className="font-semibold">
                 {subscriptionData?.subscriptionType.charAt(0).toUpperCase() + subscriptionData?.subscriptionType.slice(1)}
               </span>{' '}
-              plan. To subscribe to a different plan, please cancel your current subscription first.
+              plan. To upgrade or change your plan, please wait until your current subscription ends.
             </p>
-            <div className="flex justify-end space-x-4">
+            <div className="flex justify-end">
               <button
                 onClick={() => setShowAlreadySubscribedModal(false)}
                 className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-100"
               >
-                Go Back
-              </button>
-              <button
-                onClick={() => {
-                  setShowAlreadySubscribedModal(false);
-                  setShowCancelModal(true); // Open cancel subscription modal
-                }}
-                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-              >
-                Cancel Current Subscription
+                Close
               </button>
             </div>
           </div>
@@ -211,25 +153,6 @@ const AgentSubscription = () => {
               <h3 className="text-xl font-semibold text-green-800">
                 Active Subscription: {subscriptionData.subscriptionType.charAt(0).toUpperCase() + subscriptionData.subscriptionType.slice(1)} Plan
               </h3>
-            </div>
-            
-            <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mt-4">
-              {!subscriptionData?.cancelAtPeriodEnd ? (
-                <>
-                  <button
-                    onClick={() => setShowCancelModal(true)}
-                    className="flex items-center px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors"
-                  >
-                    <XCircle className="w-5 h-5 mr-2" />
-                    Cancel Subscription
-                  </button>
-                </>
-              ) : (
-                <div className="flex items-center bg-yellow-100 text-yellow-800 px-4 py-2 rounded-lg">
-                  <AlertTriangle className="w-5 h-5 mr-2" />
-                  <span>Your subscription will end at the end of the billing period</span>
-                </div>
-              )}
             </div>
           </div>
         )}
@@ -267,7 +190,10 @@ const AgentSubscription = () => {
                 {renderDescriptionPoints(product.description)}
 
                 <p className="text-2xl font-bold text-center mb-4">
-                  ₹{(price?.unit_amount / 100).toFixed(2)} / {price?.recurring?.interval}
+                  ₹{(price?.unit_amount / 100).toFixed(2)} /{" "}
+                   {price?.recurring?.interval_count > 1
+                  ? `${price?.recurring?.interval_count} ${price?.recurring?.interval}s`
+                  : price?.recurring?.interval}
                 </p>
 
                 {product.metadata?.features && (
@@ -301,4 +227,4 @@ const AgentSubscription = () => {
   );
 };
 
-export default AgentSubscription;
+export default AgentSubscription;	
