@@ -39,7 +39,7 @@ export const AgentNavbar = () => {
   const bellRef = useRef(null);
 
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
-  const { user, isAuthenticated, isLoading, logout, isLoggingOut, refetch } = useAuth();
+
 
 
   useEffect(() => {
@@ -86,9 +86,7 @@ export const AgentNavbar = () => {
     window.location.href = "/";
   };
 
-  const handleProfileClick = () => {
-    isAuthenticated ? navigate("/agent/agentprofile") : setIsLoginOpen(true);
-  };
+
 
   const handleProfileClick = () => {
     isAuthenticated ? navigate("/agent/agentprofile") : setIsLoginOpen(true);
@@ -96,13 +94,7 @@ export const AgentNavbar = () => {
     window.location.href = '/';
   };
 
-  const handleProfileClick = () => {
-    if (isAuthenticated) {
-      navigate('/agent/agentprofile');
-    } else {
-      setIsLoginOpen(true);
-    }
-  };
+
 
   const handleSubscriptionClick = () => {
     isAuthenticated ? navigate("/agent/subscription") : setIsLoginOpen(true);
