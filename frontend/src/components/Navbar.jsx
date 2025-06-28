@@ -1,8 +1,5 @@
-"use client"
 
-import { useState } from "react";
-// import profile from '../assets/image.png'
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import profile from '../assets/image.png'
 import AuthModal from "../pages/AuthModal";
 import MenuModal from "./MenuModel";
@@ -21,37 +18,37 @@ import { toast } from "sonner"
 const Navbar = () => {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const { user, isAuthenticated, isLoading, logout, isLoggingOut, refetch } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    refetch()
-  }, [refetch])
+    refetch();
+  }, [refetch]);
 
-const handleLogout = async () => {
-  try {
-    // Optimistic UI update - clear local data immediately
-    localStorage.removeItem('user');
-    
-    // Perform logout API call
-    await logout();
-    
-    // Soft redirect - no full page reload
-    navigate('/', { replace: true });
-    window.location.reload();
+  const handleLogoutClick = () => {
+    setIsLogoutModalOpen(true);
+  };
 
-    
-    // Close any open modals
-    setIsLoginOpen(false);
-    setIsMenuOpen(false);
-    
-    toast.success('Logged out successfully');
-  } catch (error) {
-    toast.error('Logout failed');
-    // Restore user data if logout failed
-    if (user) localStorage.setItem('user', JSON.stringify(user));
-  }
-};
+  const handleLogoutConfirm = async () => {
+    try {
+      localStorage.removeItem('user');    
+      await logout();
+      navigate('/', { replace: true });
+      window.location.reload();
+      setIsLoginOpen(false);
+      setIsMenuOpen(false);
+      setIsLogoutModalOpen(false);
+      toast.success('Logged out successfully');
+    } catch (error) {
+      toast.error('Logout failed');
+      if (user) localStorage.setItem('user', JSON.stringify(user));
+    }
+  };
+
+  const handleLogoutCancel = () => {
+    setIsLogoutModalOpen(false);
+  };
 
   const handleProfileClick = () => {
     if (isAuthenticated) {
@@ -69,7 +66,6 @@ const handleLogout = async () => {
       </div>
     );
   }
-
 
   return (
     <>
@@ -111,7 +107,7 @@ const handleLogout = async () => {
                     Profile
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    onClick={handleLogout}
+                    onClick={handleLogoutClick}
                     disabled={isLoggingOut}
                   >
                     {isLoggingOut ? 'Logging out...' : 'Logout'}
@@ -152,7 +148,7 @@ const handleLogout = async () => {
         <p className="font-marcellus text-xs text-center">Based on India</p>
       </div>
 
-      <AuthModal isOpen={isLoginOpen} onClose={() => { setIsLoginOpen(false);  }} />
+      <AuthModal isOpen={isLoginOpen} onClose={() => { setIsLoginOpen(false); }} />
 
       <MenuModal
         isOpen={isMenuOpen}
@@ -162,6 +158,30 @@ const handleLogout = async () => {
           setIsLoginOpen(true);
         }}
       />
+
+      {isLogoutModalOpen && (
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-xl">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Confirm Logout</h2>
+            <p className="text-gray-600 mb-6">Are you sure you want to log out?</p>
+            <div className="flex justify-end gap-4">
+              <button
+                onClick={handleLogoutCancel}
+                className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleLogoutConfirm}
+                disabled={isLoggingOut}
+                className={`px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 ${isLoggingOut ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
+                {isLoggingOut ? 'Logging Out...' : 'Log Out'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };

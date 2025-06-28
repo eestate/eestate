@@ -110,6 +110,13 @@ export const agentApi = createApi({
       },
       invalidatesTags: ["Properties", "AgentStats"],
     }),
+ changePropertyStatus: builder.mutation({
+  query: ({ id, status }) => ({
+    url: `/${id}/status`,
+    method: "PATCH",
+  }),
+  invalidatesTags: ["Properties", "AgentStats"],
+}),   
 
     sendMail: builder.mutation({
       query: ({ enquiryId, status }) => {
@@ -124,6 +131,23 @@ export const agentApi = createApi({
         };
       },
     }),
+    getNotyf: builder.query({
+      query: ({ userId }) => {
+        console.log("User ID passed to getNotyf:", userId);
+        return `/notyf/${userId}`;
+      },
+    }),
+
+    notificationIsRead: builder.mutation({
+      query: ({ userId }) => {
+        console.log("user readed id", userId);
+
+        return {
+          url: `/notyf-isRead/${userId}`,
+          method: "PUT",
+        };
+      },
+    }),
   }),
 });
 
@@ -133,5 +157,8 @@ export const {
   useCreatePropertyMutation,
   useEditPropertyMutation,
   useDeletePropertyMutation,
-  useSendMailMutation
+  useChangePropertyStatusMutation,
+  useSendMailMutation,
+  useGetNotyfQuery,
+  useNotificationIsReadMutation,
 } = agentApi;

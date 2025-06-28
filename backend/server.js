@@ -10,16 +10,12 @@ import { initializeSocket } from "./config/socket.js";
 // Route imports
 import adminRouter from "./routes/adminRoute.js";
 
-import authRoutes from "./routes/authRoutes.js";
-import userRoutes from "./routes/userRoutes.js";
-import agentRoutes from "./routes/agentRoutes.js";
-import PropertyRoutes from "./routes/propertyRoutes.js";
-import subscriptionRoutes from "./routes/subscriptionRoutes.js";
-import chatRoutes from "./routes/chatRoutes.js";
-import bookingRoutes from "./routes/bookingRoutes.js";
-import aboutRoutes from "./routes/aboutRoutes.js";
+import subscriptionRoutes from './routes/subscriptionRoutes.js'
+
+
 // Model imports
-import { Property } from "./models/Property.js";
+
+import { Property } from './models/Property.js';
 
 dotenv.config();
 const app = express();
@@ -32,8 +28,7 @@ const server = http.createServer(app);
 const io = initializeSocket(server);
 
 // Make io instance available in routes
-app.set("io", io);
-
+app.set('io', io);
 // Database initialization
 const initializeDB = async () => {
   try {
@@ -82,6 +77,21 @@ app.get("/", (req, res) => {
   });
 });
 
+// API Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/user', userRoutes);
+app.use('/api/agent', agentRoutes);
+app.use('/api/property', PropertyRoutes);
+app.use('/api/subscriptions', subscriptionRoutes);
+app.use("/api/chat", chatRoutes);
+app.use('/api/admin',adminRouter)
+app.use('/api/bookings',bookingRoutes);
+app.use('/api/admin', adminRouter);
+app.use('/api/bookings', bookingRoutes);
+app.use('/api/about', aboutRoutes);
+app.use('/api/chat', chatRoutes);
+
+
 // Error handling middleware
 app.use(errorHandler);
 // API Routes
@@ -105,6 +115,7 @@ server.listen(PORT, () => {
     `🔌 Socket.IO ${io.engine.clientsCount > 0 ? "ready" : "initializing"}`
   );
 });
+
 
 // Handle server shutdown gracefully
 process.on("SIGTERM", () => {

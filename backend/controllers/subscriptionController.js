@@ -40,6 +40,26 @@ export const getStripeProducts = async (req, res) => {
   }
 };
 
+export const checkSubscriptionStatus = async (req, res) => {
+  try {
+    const subscription = await Subscription.findOne({
+      user: req.user._id,
+      status: 'active',
+    });
+
+    return res.status(200).json({
+      hasActiveSubscription: !!subscription,
+      subscription: subscription || null,
+    });
+  } catch (error) {
+    console.error('Subscription check error:', error);
+    return res.status(500).json({
+      error: 'Server error',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined,
+    });
+  }
+};
+
 export const createCheckoutSession = async (req, res) => {
   try {
     const { planName, userId, email } = req.body;
@@ -48,13 +68,13 @@ export const createCheckoutSession = async (req, res) => {
       return res.status(400).json({ error: 'planName and userId are required' });
     }
 
-    // ✅ Corrected product list fetch
+    const userIdString = userId.toString();
+
     const products = await stripeInstance.products.list({
       active: true,
       expand: ['data.default_price'],
     });
 
-    // ✅ Fixed find logic
     const product = products.data.find((p) => p.name === planName);
 
     if (!product) {
@@ -65,7 +85,6 @@ export const createCheckoutSession = async (req, res) => {
       return res.status(400).json({ error: 'Product does not have a default price' });
     }
 
-    // ✅ Fixed session creation
     const session = await stripeInstance.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
@@ -77,11 +96,16 @@ export const createCheckoutSession = async (req, res) => {
       mode: 'subscription',
       success_url: `${process.env.CLIENT_URL}/agent/subscription/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.CLIENT_URL}/payment-canceled`,
-      client_reference_id: userId,
+      client_reference_id: userIdString, 
       customer_email: email || undefined,
       metadata: {
         product_name: product.name,
-        user_id: userId,
+        user_id: userIdString,
+      },
+      subscription_data: {
+        metadata: {
+          user_id: userIdString, 
+        },
       },
     });
 
@@ -208,7 +232,6 @@ export const handleStripeWebhook = async (req, res) => {
     res.status(500).json({ error: 'Webhook processing failed' });
   }
 };
-
 const handleCheckoutSessionCompleted = async (session) => {
   try {
     if (!session.subscription) {
@@ -217,16 +240,26 @@ const handleCheckoutSessionCompleted = async (session) => {
     }
 
     const subscription = await stripeInstance.subscriptions.retrieve(session.subscription);
+    
+    // Get user ID from multiple possible sources
+    const userId = session.client_reference_id || 
+                  session.metadata?.user_id || 
+                  subscription.metadata?.user_id;
+
+    if (!userId) {
+      console.error('No user ID found in session or subscription metadata');
+      return;
+    }
 
     await Subscription.findOneAndUpdate(
       { stripeSubscriptionId: session.subscription },
       {
-        user: session.client_reference_id,
+        user: userId, // Ensure this is set
         stripeSubscriptionId: session.subscription,
         stripeCustomerId: session.customer,
         stripePriceId: subscription.items.data[0].price.id,
         stripeProductId: subscription.items.data[0].price.product,
-        planName: session.metadata.product_name,
+        planName: session.metadata?.product_name || subscription.metadata?.product_name,
         status: subscription.status,
         currentPeriodEnd: isValidUnix(subscription.current_period_end)
           ? new Date(subscription.current_period_end * 1000)
@@ -236,7 +269,7 @@ const handleCheckoutSessionCompleted = async (session) => {
       { upsert: true, new: true }
     );
 
-    console.log('Subscription created/updated for user:', session.client_reference_id);
+    console.log('Subscription created/updated for user:', userId);
   } catch (error) {
     console.error('Error handling checkout.session.completed:', error);
     throw error;
@@ -246,11 +279,20 @@ const handleCheckoutSessionCompleted = async (session) => {
 const handleSubscriptionUpdated = async (subscription) => {
   try {
     const product = await stripeInstance.products.retrieve(subscription.items.data[0].price.product);
+    
+    // Get user ID from multiple possible sources
+    const userId = subscription.metadata?.user_id || 
+                  (await getUserIdFromCustomer(subscription.customer));
+
+    if (!userId) {
+      console.error('No user ID found for subscription update:', subscription.id);
+      return;
+    }
 
     await Subscription.findOneAndUpdate(
       { stripeSubscriptionId: subscription.id },
       {
-        user: subscription.metadata.user_id || (await getUserIdFromCustomer(subscription.customer)),
+        user: userId, // Ensure this is set
         stripeCustomerId: subscription.customer,
         stripePriceId: subscription.items.data[0].price.id,
         stripeProductId: subscription.items.data[0].price.product,
@@ -270,6 +312,7 @@ const handleSubscriptionUpdated = async (subscription) => {
     throw error;
   }
 };
+
 
 const handleSubscriptionDeleted = async (subscription) => {
   try {

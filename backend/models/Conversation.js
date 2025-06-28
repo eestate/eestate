@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 
+// In Conversation model
 const conversationSchema = new mongoose.Schema(
   {
     participants: [
@@ -13,6 +14,24 @@ const conversationSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Property",
       default: null,
+    },
+    // Add these new fields
+  initiatedFromProperty: {
+    type: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Property'
+    }],
+    default: [], // Ensures it's always initialized as array
+    validate: {
+      validator: function(arr) {
+        return Array.isArray(arr);
+      },
+      message: props => `${props.value} is not a valid array!`
+    }
+  },
+    isAgentConversation: {
+      type: Boolean,
+      default: false,
     },
     lastMessage: {
       type: mongoose.Schema.Types.ObjectId,
@@ -32,14 +51,33 @@ const conversationSchema = new mongoose.Schema(
   }
 );
 
-// Add index for faster querying
-conversationSchema.index({ participants: 1, property: 1 }, { unique: true });
-conversationSchema.index({ "participants": 1, "updatedAt": -1 });
+// In your Conversation model
+conversationSchema.index(
+  { 
+    participants: 1, 
+    property: 1 
+  },
+  {
+    unique: true,
+    partialFilterExpression: {
+      property: { $exists: true, $ne: null },
+      isAgentConversation: false
+    }
+  }
+);
 
-// Virtual for last updated (auto-managed by timestamps)
-conversationSchema.virtual('lastUpdated').get(function() {
-  return this.updatedAt;
-});
+conversationSchema.index(
+  { 
+    participants: 1, 
+    isAgentConversation: 1 
+  },
+  { 
+    partialFilterExpression: { 
+      isAgentConversation: true ,
+      property: null
+    }
+  }
+);
 
 const Conversation = mongoose.model("Conversation", conversationSchema);
 export default Conversation;

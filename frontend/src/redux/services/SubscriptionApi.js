@@ -1,15 +1,21 @@
 
 
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-
+import Cookies from 'js-cookie';
 export const subscriptionApi = createApi({
   reducerPath: 'subscriptionApi',
   baseQuery: fetchBaseQuery({
     baseUrl: 'http://localhost:3003/api',
-    prepareHeaders: (headers) => {
+    credentials: 'include',
+   prepareHeaders: (headers) => {
+  const token = Cookies.get('token'); 
 
-      return headers;
-    },
+  if (token) {
+    headers.set('Authorization', `Bearer ${token}`);
+  }
+
+  return headers;
+}
   }),
   endpoints: (builder) => ({
     getStripeProducts: builder.query({
@@ -43,9 +49,8 @@ export const subscriptionApi = createApi({
       }),
       invalidatesTags: ['Subscription'],
     }),
-    getActiveSubscriptions: builder.query({
-      query: () => '/subscriptions/active',
-      providesTags: ['Subscription'],
+    checkSubscription: builder.query({
+      query: () => '/subscriptions/status',
     }),
   }),
 });
@@ -55,5 +60,5 @@ export const {
   useCreateCheckoutSessionMutation,
   useVerifySubscriptionMutation,
   useCancelSubscriptionMutation,
-  useGetActiveSubscriptionsQuery,
+  useCheckSubscriptionQuery ,
 } = subscriptionApi;
