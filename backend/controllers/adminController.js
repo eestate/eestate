@@ -5,8 +5,30 @@ import subPlan from "../models/Subscription.js";
 import Booking from "../models/Booking.js";
 
 export const getAllUser = async (req, res) => {
-  const allUsers = await User.find();
-  res.status(201).json({ message: "all users fetched", data: allUsers });
+  try {
+    const { search = "", role = "all" } = req.query;
+
+    const query = {};
+
+    if (role.toLowerCase() !== "all") {
+      query.role = role.toLowerCase();
+    }
+
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    const allUsers = await User.find(query).sort({ createdAt: -1 });
+    res.status(200).json({ message: "Filtered users fetched", data: allUsers });
+  } catch (error) {
+    console.error("Error fetching filtered users:", error);
+    res
+      .status(500)
+      .json({ message: "Failed to fetch users", error: error.message });
+  }
 };
 
 export const userDetails = async (req, res) => {
@@ -192,7 +214,7 @@ export const getAllViews = async (req, res) => {
   try {
     let TotalViews = await User.countDocuments({
       isBlocked: false,
-      role: {$in :["user","agent"]}
+      role: { $in: ["user", "agent"] },
     });
     res.status(200).json({ TotalViewsCount: TotalViews });
   } catch (error) {
@@ -202,7 +224,6 @@ export const getAllViews = async (req, res) => {
     });
   }
 };
-
 
 export const allProperties = async (req, res) => {
   const allProperties = await Property.find().populate("agentId");
@@ -283,15 +304,14 @@ export const getMonthlyDashboardData = async (req, res) => {
       },
     ]);
     const calculatePercentageChange = (dataArray) => {
-      const thisMonth = new Date().getMonth(); 
+      const thisMonth = new Date().getMonth();
       const current = dataArray[thisMonth] || 0;
       const previous = dataArray[thisMonth - 1] || 0;
-    
+
       if (previous === 0) return current === 0 ? 0 : 100;
       const change = ((current - previous) / previous) * 10;
       return parseFloat(change.toFixed(1));
     };
-    
 
     const formatData = (dataArray) => {
       const result = Array(12).fill(0);
@@ -304,17 +324,207 @@ export const getMonthlyDashboardData = async (req, res) => {
     res.status(200).json({
       usersPerMonth: formatData(usersByMonth),
       propertiesByMonth: formatData(propertiesByMonth),
-      totalViewsCount:formatData(viewsByMonth),
+      totalViewsCount: formatData(viewsByMonth),
       statsChange: {
         users: calculatePercentageChange(formatData(usersByMonth)),
         properties: calculatePercentageChange(formatData(propertiesByMonth)),
         views: calculatePercentageChange(formatData(viewsByMonth)),
       },
-    
     });
   } catch (error) {
     res.status(500).json({ message: error.message || "Server error" });
   }
 };
 
+export const getTopPerfomingAgents = async (req, res) => {
+  try {
+    const topAgents = await Property.aggregate([
+      {
+        $group: {
+          _id: "$agentId",
+          totalSales: { $sum: 1 },
+          totalRevenue: { $sum: "$price" },
+        },
+      },
+      {
+        $sort: { totalSales: -1 },
+      },
+      {
+        $limit: 3,
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "_id",
+          foreignField: "_id",
+          as: "agentInfo",
+        },
+      },
+      {
+        $unwind: "$agentInfo",
+      },
+      {
+        $project: {
+          _id: 0,
+          agentId: "$_id",
+          name: "$agentInfo.name",
+          email: "$agentInfo.email",
+          profilePic: "$agentInfo.profilePic",
+          totalSales: 1,
+          totalRevenue: 1,
+        },
+      },
+    ]);
 
+    res.status(200).json(topAgents);
+  } catch (error) {
+    console.error("Top agents fetching error:", error);
+    res.status(500).json({ message: "Failed to fetch top agents" });
+  }
+};
+
+export const searchAndFilterProperties = async (req, res) => {
+  try {
+    const { search = "", status = "all" } = req.query;
+
+    const query = {};
+
+    // Add status filter if not 'all'
+    if (status.toLowerCase() !== "all") {
+      query.status = status.toLowerCase();
+    }
+
+    // Add search query if provided
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { "location.placeName": { $regex: search, $options: "i" } },
+        { "agentId.name": { $regex: search, $options: "i" } },
+      ];
+    }
+
+    const properties = await Property.find(query)
+      .populate("agentId")
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      message: "Filtered properties fetched",
+      data: properties,
+    });
+  } catch (error) {
+    console.error("Error fetching filtered properties:", error);
+    res.status(500).json({
+      message: "Failed to fetch properties",
+      error: error.message,
+    });
+  }
+};
+
+export const searchAndFilterBookings = async (req, res) => {
+  try {
+    const { search = "", status = "all" } = req.query;
+
+    let query = {};
+    if (status.toLowerCase() !== "all") {
+      query.status = status.toLowerCase();
+    }
+
+    const bookings = await Booking.find(query)
+      .populate({
+        path: "propertyId",
+        select: "name location.village location.placeName images",
+      })
+      .populate({
+        path: "userId",
+        select: "name",
+      })
+      .populate({
+        path: "agentId",
+        select: "name",
+      });
+
+    // 🔍 Apply search filter after population
+    const filteredBookings = search
+      ? bookings.filter((booking) => {
+          const userName = booking.userId?.name?.toLowerCase() || "";
+          const agentName = booking.agentId?.name?.toLowerCase() || "";
+          const propertyName = booking.propertyId?.name?.toLowerCase() || "";
+          const village =
+            booking.propertyId?.location?.village?.toLowerCase() || "";
+          const placeName =
+            booking.propertyId?.location?.placeName?.toLowerCase() || "";
+
+          return (
+            userName.includes(search.toLowerCase()) ||
+            agentName.includes(search.toLowerCase()) ||
+            propertyName.includes(search.toLowerCase()) ||
+            village.includes(search.toLowerCase()) ||
+            placeName.includes(search.toLowerCase())
+          );
+        })
+      : bookings;
+
+    res.status(200).json({
+      message: "Filtered bookings fetched",
+      data: filteredBookings,
+    });
+  } catch (error) {
+    console.error("Error fetching filtered bookings:", error);
+    res.status(500).json({
+      message: "Failed to fetch bookings",
+      error: error.message,
+    });
+  }
+};
+
+export const getTotalRevenue = async (req, res) => {
+  try {
+    // Aggregate subscriptions to calculate total revenue
+    const revenueData = await subPlan.aggregate([
+      {
+        // Match only active subscriptions
+        $match: {
+          status: 'active'
+        }
+      },
+      {
+        // Group to calculate total revenue based on planName
+        $group: {
+          _id: null,
+          totalRevenue: {
+            $sum: {
+              $cond: [
+                { $eq: ['$planName', 'Basic'] }, 1000,
+                { $cond: [
+                  { $eq: ['$planName', 'Professional'] }, 5000,
+                  { $cond: [
+                    { $eq: ['$planName', 'Premium'] }, 10000,
+                    0 // Default case for any other plan
+                  ]}
+                ]}
+              ]
+            }
+          }
+        }
+      }
+    ]);
+
+    // Extract total revenue from aggregation result
+    const totalRevenue = revenueData.length > 0 ? revenueData[0].totalRevenue : 0;
+
+    // Send response
+    res.status(200).json({
+      success: true,
+      data: {
+        totalRevenue
+      }
+    });
+  } catch (error) {
+    console.error('Error calculating total revenue:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to calculate total revenue',
+      error: error.message
+    });
+  }
+};

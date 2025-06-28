@@ -13,9 +13,18 @@ export const adminApi = createApi({
 
   endpoints: (builder) => ({
     getAllUsers: builder.query({
-      query: () => "/allUsers",
+      query: ({ search = "", role = "all" }) => {
+        const params = new URLSearchParams();
+
+        if (search) params.append("search", search);
+        if (role.toLowerCase() !== "all roles")
+          params.append("role", role.toLowerCase());
+
+        return `/allUsers?${params.toString()}`;
+      },
       providesTags: ["Users"],
     }),
+
     getUserDetails: builder.query({
       query: (id) => `/userDetails/${id}`,
       providesTags: ["Users"],
@@ -82,9 +91,9 @@ export const adminApi = createApi({
       query: () => "/getAllActiveUsers",
       providesTags: ["Activeusers"],
     }),
-    getAllviews:builder.query({
-      query:()=>"/getAllViews",
-      providesTags:["totalviwersCount"]
+    getAllviews: builder.query({
+      query: () => "/getAllViews",
+      providesTags: ["totalviwersCount"],
     }),
 
     getTotalProperties: builder.query({
@@ -92,20 +101,55 @@ export const adminApi = createApi({
       providesTags: ["TotalProperty"],
     }),
 
+    getTotalRevenue: builder.query({
+      query: () => "/revenue",
+      providesTags:["Totalrevenue"]
+      }),
+
     getAllProperties: builder.query({
       query: () => "/allProperties",
       providesTags: ["allProperties"],
     }),
 
-    getAllBookings :builder.query({
-      query : () => "/allBookings",
-      providesTags:['allEnquiri-Bookings']
+    getAllBookings: builder.query({
+      query: () => "/allBookings",
+      providesTags: ["allEnquiri-Bookings"],
+    }),
+    searchAndFilterBookings: builder.query({
+      query: ({ search = "", status = "all" }) => {
+        const params = new URLSearchParams();
+        if (search) params.append("search", search);
+        if (status.toLowerCase() !== "all")
+          params.append("status", status.toLowerCase());
+        console.log("Booking search params:", params.toString()); // Debug log
+        return `/searchBookings?${params.toString()}`;
+      },
+      providesTags: ["allEnquiri-Bookings"],
+      transformErrorResponse: (response) => {
+        console.error("Booking search error:", response);
+        return response;
+      },
+    }),
+    getMonthlyDashboardStats: builder.query({
+      query: () => "/monthly-stats",
+      providesTags: ["dashboard-chart"],
+    }),
+    getTopPerfomingAgents: builder.query({
+      query: () => "/top-agents",
+      providesTags: ["topagents"],
     }),
 
-    getMonthlyDashboardStats:builder.query({
-      query:()=>"/monthly-stats",
-      providesTags:['dashboard-chart']
-    })
+    searchAndFilterProperties: builder.query({
+      query: ({ search = "", status = "all" }) => {
+        const params = new URLSearchParams();
+        if (search) params.append("search", search);
+        if (status.toLowerCase() !== "all")
+          params.append("status", status.toLowerCase());
+        return `/searchProperties?${params.toString()}`;
+      },
+      providesTags: ["allProperties"],
+    }),
+    
   }),
 });
 
@@ -124,4 +168,8 @@ export const {
   useGetAllBookingsQuery,
   useGetMonthlyDashboardStatsQuery,
   useGetAllviewsQuery,
+  useGetTopPerfomingAgentsQuery,
+  useSearchAndFilterPropertiesQuery,
+  useSearchAndFilterBookingsQuery,
+  useGetTotalRevenueQuery
 } = adminApi;

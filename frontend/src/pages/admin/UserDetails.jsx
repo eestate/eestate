@@ -93,16 +93,6 @@ const UserDetails = () => {
                 >
                   {user?.isBlocked ? "Unblock User" : "Block User"}
                 </button>
-
-                <button
-                  onClick={() => {
-                    console.log("Delete user");
-                    // Add your delete logic here
-                  }}
-                  className="px-4 py-2 bg-gray-700 hover:bg-gray-900 text-white rounded"
-                >
-                  Delete User
-                </button>
               </div>
             </div>
           </div>

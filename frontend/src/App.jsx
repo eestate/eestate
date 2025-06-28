@@ -42,7 +42,7 @@ import LoadingSpinner from "./components/LoadingSpinner";
 
 const App = () => {
   const location = useLocation();
-  const { isAuthenticated, isLoading } = useAuth();
+  const {  isLoading } = useAuth();
   const isAdminOrAgentRoute =
     location.pathname.startsWith("/agent") ||
     location.pathname.startsWith("/admin");

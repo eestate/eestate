@@ -1,34 +1,21 @@
 import React, { useState } from "react";
 import { Filter, Search } from "lucide-react";
-import { useGetAllPropertiesQuery } from "@/redux/services/AdminApi";
+import { useSearchAndFilterPropertiesQuery } from "@/redux/services/AdminApi";
 import { useNavigate } from "react-router-dom";
 
 const AdminProperty = () => {
-  const [selectedStatus, setSelectedStatus] = useState("All Status");
+  const [selectedStatus, setSelectedStatus] = useState("All");
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
 
-  const { data, isLoading } = useGetAllPropertiesQuery();
+  const { data, isLoading } = useSearchAndFilterPropertiesQuery({
+    search: searchQuery,
+    status: selectedStatus,
+  });
+
   const properties = data?.data || [];
-
-  const statusOptions = ["All Status", "Available", "Sold"];
-
-  const filteredProperties = properties
-    .filter(
-      (property) =>
-        selectedStatus === "All Status" || property.status === selectedStatus
-    )
-    .filter(
-      (property) =>
-        property.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        property.location?.placeName
-          ?.toLowerCase()
-          .includes(searchQuery.toLowerCase()) ||
-        property.agentId?.name
-          ?.toLowerCase()
-          .includes(searchQuery.toLowerCase())
-    );
+  const statusOptions = ["All", "Available", "Sold"];
 
   const handleStatusFilterSelect = (status) => {
     setSelectedStatus(status);
@@ -105,14 +92,14 @@ const AdminProperty = () => {
                     Loading properties...
                   </td>
                 </tr>
-              ) : filteredProperties.length === 0 ? (
+              ) : properties.length === 0 ? (
                 <tr>
                   <td colSpan="4" className="p-4 text-center">
                     No properties found.
                   </td>
                 </tr>
               ) : (
-                filteredProperties.map((property) => (
+                properties.map((property) => (
                   <tr
                     key={property._id}
                     className="border-b hover:bg-gray-50 cursor-pointer"
