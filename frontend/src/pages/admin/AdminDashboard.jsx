@@ -15,14 +15,11 @@ import {
   useGetAllActiveUsersQuery,
   useGetAllviewsQuery,
   useGetMonthlyDashboardStatsQuery,
+  useGetTopPerfomingAgentsQuery,
   useGetTotalPropertiesQuery,
+  useGetTotalRevenueQuery,
 } from "@/redux/services/AdminApi";
-// import {
-//   useGetAllActiveUsersQuery,
-//   useGetTotalPropertiesQuery,
-// } from './adminApi';
 
-// Register Chart.js components
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -36,6 +33,13 @@ ChartJS.register(
 // Analytics Component
 const AdminDashboard = () => {
   // Fetch data from RTK Query hooks
+  const {
+    data: revenueData,
+    isLoading: isLoadingRevenue,
+    isError: isErrorRevenue,
+    error: errorRevenue,
+  } = useGetTotalRevenueQuery();
+
   const {
     data: activeUsersData,
     isLoading: isLoadingUsers,
@@ -64,6 +68,15 @@ const AdminDashboard = () => {
     error: errorStats,
   } = useGetMonthlyDashboardStatsQuery();
 
+  const {
+    data: topAgents,
+    isLoading: isLoadingTopAgents,
+    isError: isErrorTopAgents,
+    error: errorTopAgents,
+  } = useGetTopPerfomingAgentsQuery();
+
+
+  
   // Chart data
   const chartData = {
     labels: [
@@ -112,7 +125,11 @@ const AdminDashboard = () => {
     const isPositive = value >= 0;
     const arrow = isPositive ? "↗" : "↘";
     const color = isPositive ? "text-green-500" : "text-red-500";
-    return <p className={`${color} text-sm`}>{arrow} {Math.abs(value)}%</p>;
+    return (
+      <p className={`${color} text-sm`}>
+        {arrow} {Math.abs(value)}%
+      </p>
+    );
   };
   const chartOptions = {
     responsive: true,
@@ -201,7 +218,8 @@ const AdminDashboard = () => {
                   ? "Error"
                   : propertiesData?.Total ?? "0"}
               </p>
-              {monthlyStats && renderChange(monthlyStats?.statsChange?.properties)}
+              {monthlyStats &&
+                renderChange(monthlyStats?.statsChange?.properties)}
             </div>
             <Home className="text-green-500" size={24} />
           </div>
@@ -228,7 +246,14 @@ const AdminDashboard = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-500 text-sm">Revenue</p>
-              <p className="text-2xl font-bold">892</p>
+              <p className="text-2xl font-bold">
+                {isLoadingRevenue
+                  ? "Loading..."
+                  : isErrorRevenue
+                  ? "Error"
+                  : revenueData?.data?.totalRevenue?.toLocaleString() ?? "0"}
+              </p>
+              {/* You might want to add a renderChange for revenue if you have comparison data */}
               <p className="text-green-500 text-sm">↗ 5.7%</p>
             </div>
             <CreditCard className="text-orange-500" size={24} />
@@ -258,6 +283,12 @@ const AdminDashboard = () => {
               {errorViews?.data?.message || "unknown Error"}
             </p>
           )}
+              {isErrorRevenue && (
+            <p>
+              Failed to fetch revenue:{" "}
+              {errorRevenue?.data?.message || "Unknown error"}
+            </p>
+          )}
         </div>
       )}
 
@@ -280,27 +311,40 @@ const AdminDashboard = () => {
       {/* Top Performing Agents */}
       <div className="bg-white p-6 rounded-lg shadow-sm border">
         <h3 className="text-lg font-semibold mb-4">Top Performing Agents</h3>
-        <div className="space-y-4">
-          {[
-            { name: "Sarah Williams", sales: "23 properties", amount: "$1.2M" },
-            { name: "David Wilson", sales: "18 properties", amount: "$890K" },
-            { name: "Michael Brown", sales: "15 properties", amount: "$720K" },
-          ].map((agent, index) => (
-            <div
-              key={index}
-              className="flex items-center justify-between p-3 hover:bg-gray-50 rounded"
-            >
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gray-300 rounded-full"></div>
-                <div>
-                  <p className="font-medium">{agent.name}</p>
-                  <p className="text-sm text-gray-500">{agent.sales}</p>
+
+        {isLoadingTopAgents ? (
+          <p>Loading...</p>
+        ) : isErrorTopAgents ? (
+          <p className="text-red-500">
+            Error: {errorTopAgents?.data?.message || "Unknown error"}
+          </p>
+        ) : (
+          <div className="space-y-4">
+            {topAgents?.map((agent, index) => (
+              <div
+                key={index}
+                className="flex items-center justify-between p-3 hover:bg-gray-50 rounded"
+              >
+                <div className="flex items-center space-x-3">
+                  <img
+                    src={agent.profilePic || "/default-user.png"} // fallback image
+                    alt={agent.name}
+                    className="w-10 h-10 rounded-full object-cover border"
+                  />
+                  <div>
+                    <p className="font-medium">{agent.name}</p>
+                    <p className="text-sm text-gray-500">
+                      {agent.totalSales} properties
+                    </p>
+                  </div>
                 </div>
+                <span className="font-semibold text-blue-500">
+                  ${agent.totalRevenue.toLocaleString()}
+                </span>
               </div>
-              <span className="font-semibold">{agent.amount}</span>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

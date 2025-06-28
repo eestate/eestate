@@ -13,7 +13,11 @@ import {
   getAllUser,
   getAllViews,
   getMonthlyDashboardData,
+  getTopPerfomingAgents,
   getTotalProperties,
+  getTotalRevenue,
+  searchAndFilterBookings,
+  searchAndFilterProperties,
   userDetails,
 } from "../controllers/adminController.js";
 const adminRouter = express.Router();
@@ -27,10 +31,14 @@ adminRouter.get("/getSubscriptions", protect, allSubscriptionPlans);
 adminRouter.put("/editSubscription/:planId", protect, editSubscription);
 adminRouter.get("/getTotalProperties", protect, getTotalProperties);
 adminRouter.get("/getAllActiveUsers", protect, getAllActiveUsers);
-adminRouter.get("/getAllViews",protect,getAllViews)
+adminRouter.get("/getAllViews", protect, getAllViews);
 adminRouter.delete("/deletePlan/:planId", protect, deletePlan);
 adminRouter.get("/allProperties", protect, allProperties);
 adminRouter.get("/allBookings", protect, allBookings);
-adminRouter.get("/monthly-stats",protect,getMonthlyDashboardData)
+adminRouter.get("/monthly-stats", protect, getMonthlyDashboardData);
+adminRouter.get("/top-agents", protect, getTopPerfomingAgents);
+adminRouter.get("/searchProperties", protect, searchAndFilterProperties);
+adminRouter.get("/searchBookings", protect, searchAndFilterBookings);
+adminRouter.get("/revenue",protect,getTotalRevenue)
 
 export default adminRouter;

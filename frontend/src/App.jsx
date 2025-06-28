@@ -1,38 +1,5 @@
 
 
-import React from 'react'
-import { Routes, Route, useLocation } from 'react-router-dom'
-import Home from './pages/Home'
-import Navbar from './components/Navbar'
-import Profile from './pages/user/Profile'
-import Footer from './components/Footer'
-import PropertyListing from './pages/PropertListing'
-import PropertyDetail from './pages/PropertDetail'
-import AgentLayout from './layouts/AgentLayout'
-import AgentDashboard from './pages/Agent/AgentDashboard'
-import AgentProperties from './pages/Agent/AgentProperties'
-import AgentMessages from './pages/Agent/AgentMessages'
-import AgentEnquiries from './pages/Agent/AgentEnquiries'
-import { AdminSidebar } from './pages/admin/AdminSidebar'
-import AdminLayout from './layouts/AdminLayout'
-import AdminDashboard from './pages/admin/AdminDashboard'
-import AdminUserManagement from './pages/admin/AdminuserManagement'
-import AdminProperty from './pages/admin/AdminProperty'
-import AdminSubscription from './pages/admin/AdminSubctription'
-import AdminBooking from './pages/admin/AdminBooking'
-import { AuthStateChecker } from './components/AuthStateChecker'
-import RoleRouter from './ProtectedRoutes/RoleRouter'
-import AgentListingPage from './pages/AgentListing'
-import AgentDetailsPage from './pages/AgentDetails'
-import About from './pages/About'
-import { ProtectedRoute } from './ProtectedRoutes/ProtectedRoute'
-import UserDetails from './pages/admin/UserDetails'
-import AgentDetails from './pages/admin/AgentDetails'
-import AgentProfile from './pages/Agent/AgentProfile'
-import AgentSubscription from './pages/Agent/AgentSubscription'
-import AdminAboutPage from './pages/admin/AdminAboutPage'
-import AgentSuccess from './pages/Agent/AgentSuccess'
-=======
 import React from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 import Home from "./pages/Home";
@@ -66,6 +33,7 @@ import AgentSubscription from "./pages/Agent/AgentSubscription";
 import AdminAboutPage from "./pages/admin/AdminAboutPage";
 import AdminPropertyDetails from "./pages/admin/AdminPropertyDetails";
 import BookingDetails from "./pages/admin/BookingDetails";
+import AgentSuccess from './pages/Agent/AgentSuccess'
 
 const App = () => {
   const location = useLocation();
