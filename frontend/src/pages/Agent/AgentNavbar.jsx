@@ -1,6 +1,6 @@
 "use client";
 import { Building, FileText, Home, Bell, MessageSquare, User, ChevronDown } from "lucide-react";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect,useRef } from "react";
 
 import { useNavigate, useLocation } from "react-router-dom";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -17,7 +17,6 @@ import {
   useNotificationIsReadMutation,
 } from "@/redux/services/AgentApi";
 import { format } from "timeago.js";
-import { useRef } from "react";
 
 export const AgentNavbar = () => {
   const UserDetails = JSON.parse(localStorage.getItem("user"));
@@ -40,7 +39,6 @@ export const AgentNavbar = () => {
   const bellRef = useRef(null);
 
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
-
 
 
   useEffect(() => {
@@ -87,9 +85,15 @@ export const AgentNavbar = () => {
     window.location.href = "/";
   };
 
+ 
 
-
-
+  const handleProfileClick = () => {
+    if (isAuthenticated) {
+      navigate('/agent/agentprofile');
+    } else {
+      setIsLoginOpen(true);
+    }
+  };
 
   const handleSubscriptionClick = () => {
     isAuthenticated ? navigate("/agent/subscription") : setIsLoginOpen(true);

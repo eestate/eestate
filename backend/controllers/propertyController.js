@@ -21,7 +21,7 @@ export const getAllProperties = async (req, res, next) => {
       sort,
     } = req.query;
 
-    const query = { isActive: true };
+    const query = { isActive: true ,status: 'available', };
 
     if (state_district) {
       query['location.state_district'] = { $regex: state_district, $options: 'i' };

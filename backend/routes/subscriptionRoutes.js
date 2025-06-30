@@ -7,6 +7,7 @@ import {
   cancelSubscription,
   verifySubscription,
   checkSubscriptionStatus,
+  getActiveSubscriptions
 } from '../controllers/subscriptionController.js';
 import { protect } from '../middleware/authMiddleware.js';
 const router = express.Router();
@@ -17,4 +18,5 @@ router.post('/cancel', cancelSubscription);
 router.post('/verify', verifySubscription);
 router.post('/webhook', express.raw({type: 'application/json'}), handleStripeWebhook);
 router.get('/status', protect, checkSubscriptionStatus);
+router.get('/active', getActiveSubscriptions);
 export default router;

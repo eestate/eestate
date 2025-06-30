@@ -52,6 +52,10 @@ export const subscriptionApi = createApi({
     checkSubscription: builder.query({
       query: () => '/subscriptions/status',
     }),
+    getActiveSubscriptions: builder.query({
+      query: () => '/subscriptions/active',
+      providesTags: ['Subscription'],
+  }),
   }),
 });
 
@@ -61,4 +65,5 @@ export const {
   useVerifySubscriptionMutation,
   useCancelSubscriptionMutation,
   useCheckSubscriptionQuery ,
+  useGetActiveSubscriptionsQuery,
 } = subscriptionApi;

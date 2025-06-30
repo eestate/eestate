@@ -1012,9 +1012,7 @@ useEffect(() => {
                 Error loading messages: {messagesErrorDetails?.data?.message || 'Unknown error'}
               </p>
             ) : messages.length === 0 ? (
-              <p className="font-manrope text-center text-gray-500 text-sm">
-                Start a conversation with the agent
-              </p>
+              <p className="text-center text-gray-500 text-sm">Start a conversation with the agent</p>
             ) : (
               <>
                 {messages.map((msg) => {
