@@ -1,8 +1,11 @@
 
 
-import stripe from 'stripe';
-import Subscription from '../models/Subscription.js';
-const stripeInstance = stripe(process.env.STRIPE_SECRET_KEY);
+import Stripe from 'stripe';
+import dotenv from 'dotenv';
+dotenv.config();
+
+const stripeInstance = new Stripe(process.env.STRIPE_SECRET_KEY);
+
 
 const isValidUnix = (timestamp) => {
   return typeof timestamp === 'number' && !isNaN(timestamp) && timestamp > 0;

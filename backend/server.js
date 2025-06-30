@@ -6,6 +6,13 @@ import cookieParser from "cookie-parser";
 import { errorHandler } from "./middleware/errorHandlerMiddleware.js";
 import http from "http";
 import { initializeSocket } from "./config/socket.js";
+import userRoutes from "./routes/userRoutes.js"
+import authRoutes from "./routes/authRoutes.js"
+import agentRoutes from "./routes/agentRoutes.js";
+import PropertyRoutes from "./routes/propertyRoutes.js";
+import chatRoutes from "./routes/chatRoutes.js";
+import bookingRoutes from "./routes/bookingRoutes.js";
+import aboutRoutes from "./routes/aboutRoutes.js";
 
 // Route imports
 import adminRouter from "./routes/adminRoute.js";
@@ -84,7 +91,6 @@ app.use('/api/agent', agentRoutes);
 app.use('/api/property', PropertyRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
 app.use("/api/chat", chatRoutes);
-app.use('/api/admin',adminRouter)
 app.use('/api/bookings',bookingRoutes);
 app.use('/api/admin', adminRouter);
 app.use('/api/bookings', bookingRoutes);
@@ -94,19 +100,6 @@ app.use('/api/chat', chatRoutes);
 
 // Error handling middleware
 app.use(errorHandler);
-// API Routes
-app.use("/api/auth", authRoutes);
-app.use("/api/user", userRoutes);
-app.use("/api/agent", agentRoutes);
-app.use("/api/property", PropertyRoutes);
-app.use("/api/subscriptions", subscriptionRoutes);
-app.use("/api/chat", chatRoutes);
-app.use("/api/admin", adminRouter);
-app.use("/api/bookings", bookingRoutes);
-app.use("/api/admin", adminRouter);
-app.use("/api/bookings", bookingRoutes);
-app.use("/api/about", aboutRoutes);
-app.use("/api/chat", chatRoutes);
 
 // Start server
 server.listen(PORT, () => {

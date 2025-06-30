@@ -171,5 +171,6 @@ export const {
   useGetTopPerfomingAgentsQuery,
   useSearchAndFilterPropertiesQuery,
   useSearchAndFilterBookingsQuery,
-  useGetTotalRevenueQuery
+  useGetTotalRevenueQuery,
+  useGetActiveSubscriptionsQuery
 } = adminApi;
