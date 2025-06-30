@@ -8,6 +8,7 @@ import { adminApi } from "./services/AdminApi";
 import { bookingApi } from "./services/BookingApi";
 import { aboutApi } from "./services/AboutApi";
 import { subscriptionApi } from "./services/SubscriptionApi";
+import { contentApi } from "./services/ContentApi";
 
 export const store = configureStore({
     reducer: {
@@ -20,9 +21,10 @@ export const store = configureStore({
         [bookingApi.reducerPath]: bookingApi.reducer,
         [aboutApi.reducerPath]: aboutApi.reducer,
         [subscriptionApi.reducerPath]: subscriptionApi.reducer,
+        [contentApi.reducerPath]: contentApi.reducer,
     },
     middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware()
     .concat(authApi.middleware,agentApi.middleware,propertyApi.middleware,
-        chatApi.middleware,userApi.middleware,adminApi.middleware,bookingApi.middleware,aboutApi.middleware,subscriptionApi.middleware),
+        chatApi.middleware,userApi.middleware,adminApi.middleware,bookingApi.middleware,aboutApi.middleware,subscriptionApi.middleware,contentApi.middleware),
 })

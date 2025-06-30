@@ -36,7 +36,11 @@ import NotificationAlert from "./components/NotificationAlert";
 
 
 import AgentSuccess from './pages/Agent/AgentSuccess'
-
+import ContactUs from "./pages/ContactUs";
+import Help from "./pages/Help";
+import TermsAndConditions from "./pages/TermsAndConditions";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import AdminContentManagement from "./pages/admin/AdminContentManagement";
 
 const App = () => {
   const location = useLocation();
@@ -62,6 +66,11 @@ const App = () => {
           <Route path="/listingagents" element={<AgentListingPage />} />
           <Route path="/listingagents/:id" element={<AgentDetailsPage />} />
           <Route path="/about" element={<About />} />
+          <Route path="/contact-us" element={<ContactUs/>}/>
+          <Route path="/help" element={<Help/>}/>
+          <Route path="/termsandconditions" element={<TermsAndConditions/>}/>
+           <Route path="/privacypolicy" element={<PrivacyPolicy/>}/>
+
 
           {/* Protected User Routes */}
           <Route
@@ -125,6 +134,7 @@ const App = () => {
             <Route path="bookings" element={<AdminBooking />} />
             <Route path="bookings/:id" element={<BookingDetails />} />
             <Route path="about" element={<AdminAboutPage />} />
+            <Route path="content-management" element={<AdminContentManagement />} />
           </Route>
         </Routes>
       </main>

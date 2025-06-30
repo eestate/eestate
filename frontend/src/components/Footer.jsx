@@ -40,7 +40,7 @@ function Footer() {
             </li>
             <li>
               <Link
-                to="/contact"
+                to="/contact-us"
                 className="font-manrope font-semibold text-sm sm:text-base hover:underline transition"
               >
                 Contact us
@@ -52,7 +52,7 @@ function Footer() {
           <ul className="space-y-3 text-center sm:text-left border-b border-gray-700 sm:border-none pb-4 sm:pb-0">
             <li>
               <Link
-                to="/terms"
+                to="/termsandconditions"
                 className="font-manrope font-semibold text-sm sm:text-base hover:underline transition"
               >
                 Terms & Conditions
@@ -60,7 +60,7 @@ function Footer() {
             </li>
             <li>
               <Link
-                to="/privacy"
+                to="/privacypolicy"
                 className="font-manrope font-semibold text-sm sm:text-base hover:underline transition"
               >
                 Privacy Policy

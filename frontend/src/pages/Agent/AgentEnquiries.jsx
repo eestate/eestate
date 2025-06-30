@@ -152,14 +152,10 @@ const AgentEnquiries = () => {
               }`}
             >
               {tab === "all"
-
-                ? "New Enquiries"
-
-                ? "All Enquiries"
-
-                : tab === "accepted"
-                ? "Confirmed"
-                : "Cancelled"}
+          ? "All Enquiries"
+          : tab === "accepted"
+          ? "Confirmed"
+          :"Cancelled"}
             </button>
           ))}
         </div>

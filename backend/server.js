@@ -18,7 +18,7 @@ import adminRouter from './routes/adminRoute.js';
 import chatRoutes from './routes/chatRoutes.js'
 
 import subscriptionRoutes from './routes/subscriptionRoutes.js'
-
+import contentRoutes from './routes/contentRoutes.js';
 
 // Model imports
 
@@ -93,7 +93,7 @@ app.use('/api/admin', adminRouter);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/about', aboutRoutes);
 app.use('/api/chat', chatRoutes);
-
+app.use('/api/content',contentRoutes)
 
 // Error handling middleware
 app.use(errorHandler);

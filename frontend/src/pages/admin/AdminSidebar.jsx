@@ -9,6 +9,7 @@ import {
   CreditCard, 
   Calendar,
   Info,
+  FileText,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -25,6 +26,7 @@ export const AdminSidebar = ({ activeTab, setActiveTab }) => {
     { id: 'subscriptions', label: 'Subscriptions', icon: CreditCard, path: '/admin/subscriptions' },
     { id: 'bookings', label: 'Bookings', icon: Calendar, path: '/admin/bookings' },
     { id: 'about', label: 'About', icon: Info, path: '/admin/about' },
+    { id: 'content-management', label: 'Admin Content Management', icon: FileText, path: '/admin/content-management' },
   ];
 
   const currentPage = location.pathname.split('/')[2] || 'dashboard';

@@ -1,6 +1,6 @@
 "use client";
 import { Building, FileText, Home, Bell, MessageSquare, User, ChevronDown } from "lucide-react";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect,useRef } from "react";
 
 import { useNavigate, useLocation } from "react-router-dom";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -39,7 +39,6 @@ export const AgentNavbar = () => {
   const bellRef = useRef(null);
 
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
-  const { user, isAuthenticated, isLoading, logout, isLoggingOut, refetch } = useAuth();
 
 
   useEffect(() => {
@@ -86,15 +85,7 @@ export const AgentNavbar = () => {
     window.location.href = "/";
   };
 
-  const handleProfileClick = () => {
-    isAuthenticated ? navigate("/agent/agentprofile") : setIsLoginOpen(true);
-  };
-
-  const handleProfileClick = () => {
-    isAuthenticated ? navigate("/agent/agentprofile") : setIsLoginOpen(true);
-    setIsLogoutConfirmOpen(false);
-    window.location.href = '/';
-  };
+ 
 
   const handleProfileClick = () => {
     if (isAuthenticated) {
