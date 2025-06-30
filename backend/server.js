@@ -87,7 +87,6 @@ app.use('/api/agent', agentRoutes);
 app.use('/api/property', PropertyRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
 app.use("/api/chat", chatRoutes);
-app.use('/api/admin',adminRouter)
 app.use('/api/bookings',bookingRoutes);
 app.use('/api/admin', adminRouter);
 app.use('/api/bookings', bookingRoutes);

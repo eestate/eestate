@@ -685,10 +685,12 @@
 
 import React from "react";
 import { DollarSign } from "lucide-react";
-import {
-  useGetStripeProductsQuery,
-  useGetActiveSubscriptionsQuery,
-} from "@/redux/services/SubscriptionApi";
+// import {
+//   useGetStripeProductsQuery,
+//   useGetActiveSubscriptionsQuery,
+// } from "@/redux/services/SubscriptionApi";
+
+import { useGetStripeProductsQuery ,useGetActiveSubscriptionsQuery} from "@/redux/services/SubscriptionApi";
 
 const AdminSubscription = () => {
   const {
