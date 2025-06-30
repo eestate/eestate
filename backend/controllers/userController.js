@@ -12,7 +12,7 @@ export const getCurrentUser = (req, res) => {
 export const getAllAgents = async (req, res, next) => {
   try {
     const { page = 1, limit = 6, search = '' } = req.query;
-    const query = { role: 'agent' }; 
+    const query = { role: 'agent',isBlocked: false, }; 
 
     if (search) {
       query.name = { $regex: search, $options: 'i' };
