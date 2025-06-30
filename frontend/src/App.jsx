@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { Suspense } from "react";
 import { Routes, Route, useLocation } from "react-router-dom";
 import Home from "./pages/Home";
 import Navbar from "./components/Navbar";
@@ -36,6 +36,9 @@ import NotificationAlert from "./components/NotificationAlert";
 
 
 import AgentSuccess from './pages/Agent/AgentSuccess'
+import { useAuth } from "./hooks/useAuth";
+import LoadingSpinner from "./components/LoadingSpinner";
+
 import ContactUs from "./pages/ContactUs";
 import Help from "./pages/Help";
 import TermsAndConditions from "./pages/TermsAndConditions";
@@ -44,16 +47,22 @@ import AdminContentManagement from "./pages/admin/AdminContentManagement";
 
 const App = () => {
   const location = useLocation();
+  const {  isLoading } = useAuth();
   const isAdminOrAgentRoute =
     location.pathname.startsWith("/agent") ||
     location.pathname.startsWith("/admin");
 
     const isAgentRoute = location.pathname.startsWith("/agent");
 
+      if (isLoading) {
+    return <LoadingSpinner fullScreen />;
+  }
+
   return (
     <div className="flex flex-col min-h-screen">
       {!isAdminOrAgentRoute && <Navbar />}
       <AuthStateChecker />
+      <Suspense fallback={<LoadingSpinner />}>
       <RoleRouter />
 
       <main className="flex-grow">
@@ -138,6 +147,7 @@ const App = () => {
           </Route>
         </Routes>
       </main>
+      </Suspense>
 
       {!isAdminOrAgentRoute && <Footer />}
     </div>

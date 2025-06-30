@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Filter, Search, MoreHorizontal, Eye } from "lucide-react";
+import { Filter, Search, Eye } from "lucide-react";
 import { useGetAllUsersQuery } from "@/redux/services/AdminApi";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { useNavigate } from "react-router-dom";
@@ -10,29 +10,23 @@ const AdminUserManagement = () => {
   const [selectedRole, setSelectedRole] = useState("All Roles");
   const [searchQuery, setSearchQuery] = useState("");
 
-  const { data, isLoading } = useGetAllUsersQuery();
+  // 🔁 Use RTK Query with dynamic params
+  const { data, isLoading } = useGetAllUsersQuery(
+    {
+      search: searchQuery,
+      role: selectedRole,
+    },
+    {
+      // Optional: re-fetch when search/role changes (debounced search can also be added)
+      skip: false,
+    }
+  );
 
   const users = data?.data || [];
 
   useEffect(() => {
-    console.log("All users from backend:", users);
+    console.log("Fetched users:", users);
   }, [users]);
-
-  if (isLoading) {
-    return <LoadingSpinner />;
-  }
-
-  const filteredUsers = users
-    .filter(
-      (user) =>
-        selectedRole === "All Roles" ||
-        user.role.toLowerCase() === selectedRole.toLowerCase()
-    )
-    .filter(
-      (user) =>
-        user.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        user.email?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
 
   const handleRoleSelect = (role) => {
     setSelectedRole(role);
@@ -45,35 +39,27 @@ const AdminUserManagement = () => {
 
   const formatDate = (isoDateString) => {
     if (!isoDateString) return "";
-
     const date = new Date(isoDateString);
-
-    const options = {
-      year: "numeric",
-      month: "short", // "Jan", "Feb", etc.
-      day: "numeric",
-    };
-
+    const options = { year: "numeric", month: "short", day: "numeric" };
     return date.toLocaleDateString("en-US", options);
   };
 
   const handleDetails = (id, role) => {
-    if (role === "agent") {
-      navigate(`/admin/user-management/agent/${id}`);
-    }
-
-    if(role==='user'){
-      navigate(`/admin/user-management/user/${id}`);
-    }
-
-   
+    if (role === "agent") navigate(`/admin/user-management/agent/${id}`);
+    if (role === "user") navigate(`/admin/user-management/user/${id}`);
   };
+
+  if (isLoading) return <LoadingSpinner />;
 
   return (
     <div className="p-6">
+      {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-semibold">User Management</h1>
+
+        {/* Search and Filter */}
         <div className="flex items-center space-x-4">
+          {/* Search */}
           <div className="relative">
             <input
               type="text"
@@ -87,6 +73,8 @@ const AdminUserManagement = () => {
               className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
             />
           </div>
+
+          {/* Filter by Role */}
           <div className="relative">
             <button
               className="flex items-center space-x-2 px-4 py-2 border rounded-lg"
@@ -97,7 +85,7 @@ const AdminUserManagement = () => {
             </button>
             {showRoleDropdown && (
               <div className="absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-lg z-10">
-                {["All Roles", "Agent", "User", "Admin"].map((role) => (
+                {["All Roles", "Agent", "User"].map((role) => (
                   <button
                     key={role}
                     className="w-full text-left px-4 py-2 hover:bg-gray-100"
@@ -112,6 +100,7 @@ const AdminUserManagement = () => {
         </div>
       </div>
 
+      {/* Users Table */}
       <div className="bg-white rounded-lg shadow-sm border">
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -125,18 +114,22 @@ const AdminUserManagement = () => {
               </tr>
             </thead>
             <tbody>
-              {filteredUsers.map((user) => (
+              {users.map((user) => (
                 <tr key={user._id} className="border-b hover:bg-gray-50">
                   <td className="p-4">
                     <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 bg-gray-300 rounded-full">
+                      <div className="w-8 h-8 bg-gray-300 rounded-full overflow-hidden">
                         {user.profilePic ? (
                           <img
                             src={user.profilePic}
                             alt="Profile"
                             className="w-full h-full rounded-full object-cover"
                           />
-                        ) : null}
+                        ) : (
+                          <span className="text-xs text-white flex items-center justify-center h-full w-full bg-gray-400 rounded-full">
+                            {user.name?.[0]?.toUpperCase()}
+                          </span>
+                        )}
                       </div>
                       <div>
                         <p className="font-medium">{user.name}</p>
@@ -144,8 +137,8 @@ const AdminUserManagement = () => {
                       </div>
                     </div>
                   </td>
-                  <td className="p-4">
-                    <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-sm capitalize">
+                  <td className="p-4 capitalize">
+                    <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-sm">
                       {user.role}
                     </span>
                   </td>
@@ -167,12 +160,19 @@ const AdminUserManagement = () => {
                     <button
                       className="text-gray-400 hover:text-gray-600"
                       onClick={() => handleDetails(user._id, user.role)}
-                      >
+                    >
                       <Eye size={16} />
                     </button>
                   </td>
                 </tr>
               ))}
+              {users.length === 0 && (
+                <tr>
+                  <td colSpan="5" className="p-6 text-center text-gray-400">
+                    No users found.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

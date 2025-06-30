@@ -21,7 +21,7 @@ export const initializeSocket = (userId) => {
     reconnectionDelayMax: 5000,
     timeout: 20000,
     autoConnect: true,
-    transports: ['websocket', 'polling'] // Fallback transport
+    transports: ['websocket', 'polling'], // Fallback transport
   });
 
   // Connection handlers
@@ -84,12 +84,17 @@ export const disconnectSocket = () => {
     socket.off('reconnect_failed');
     socket.off('userConnected');
     socket.off('userDisconnected');
-    
+    socket.off('agentOnline');
+    socket.off('agentOffline');
+    socket.off('newMessage');
+    socket.off('typing');
+    socket.off('agentStatus');
+
     socket.disconnect();
     socket = null;
-    
+
     // Clear user mappings
-    Object.keys(userSocketMap).forEach(userId => {
+    Object.keys(userSocketMap).forEach((userId) => {
       delete userSocketMap[userId];
     });
   }
@@ -111,6 +116,7 @@ export const isSocketConnected = () => {
 export const joinConversationRoom = (conversationId) => {
   if (socket) {
     socket.emit('joinConversation', conversationId);
+    console.log(`Joined conversation room: ${conversationId}`);
   } else {
     console.warn('Cannot join room - socket not initialized');
   }
@@ -119,6 +125,9 @@ export const joinConversationRoom = (conversationId) => {
 export const leaveConversationRoom = (conversationId) => {
   if (socket) {
     socket.emit('leaveConversation', conversationId);
+    console.log(`Left conversation room: ${conversationId}`);
+  } else {
+    console.warn('Cannot leave room - socket not initialized');
   }
 };
 
@@ -128,55 +137,72 @@ export const sendSocketMessage = (event, data) => {
     console.error('Socket not initialized');
     return false;
   }
-  
+
   if (!event || !data) {
     console.error('Event and data are required');
     return false;
   }
-  
+
   socket.emit(event, data);
   return true;
 };
 
-// Add these new functions to your frontend socket utils
+// Typing indicator helper
 export const sendTypingIndicator = (conversationId, userId, isTyping) => {
-  if (!socket) return false;
+  if (!socket) {
+    console.error('Socket not initialized');
+    return false;
+  }
   socket.emit('typing', { conversationId, userId, isTyping });
   return true;
 };
 
+// Join agent channel for online/offline status
 export const joinAgentChannel = (agentId) => {
   if (socket) {
     socket.emit('joinAgentChannel', agentId);
+    console.log(`Joined agent channel: ${agentId}`);
+  } else {
+    console.warn('Cannot join agent channel - socket not initialized');
   }
 };
 
+// Listen for agent online/offline status
 export const listenForAgentStatus = (callback) => {
-  if (!socket) return;
-  
+  if (!socket) {
+    console.warn('Socket not initialized');
+    return () => {};
+  }
+
   const handler = ({ agentId, isOnline }) => {
     callback(agentId, isOnline);
   };
-  
+
   socket.on('agentStatus', handler);
-  
+
   // Return cleanup function
   return () => {
     socket.off('agentStatus', handler);
   };
 };
 
+// Listen for typing events
 export const listenForTyping = (callback) => {
-  if (!socket) return;
-  
+  if (!socket) {
+    console.warn('Socket not initialized');
+    return () => {};
+  }
+
   const handler = ({ conversationId, userId, isTyping }) => {
     callback(conversationId, userId, isTyping);
   };
-  
+
   socket.on('typing', handler);
-  
-  // Return cleanup function
+
+  // Return cleanup function with null check
   return () => {
-    socket.off('typing', handler);
+    if (socket) {
+      socket.off('typing', handler);
+    }
   };
 };

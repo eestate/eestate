@@ -393,3 +393,44 @@ const getUserIdFromCustomer = async (customerId) => {
     return null;
   }
 };
+
+
+export const getActiveSubscriptions = async (req, res) => {
+  try {
+    const subscriptions = await Subscription.find({ status: 'active' })
+      .populate('user', 'name email') 
+      .select('user planName stripeSubscriptionId stripeCustomerId stripePriceId stripeProductId status currentPeriodEnd cancelAtPeriodEnd createdAt updatedAt');
+
+    if (!subscriptions || subscriptions.length === 0) {
+      return res.status(404).json({ message: 'No active subscriptions found' });
+    }
+
+    const formattedSubscriptions = subscriptions.map((sub) => ({
+      id: sub._id,
+      user: {
+        id: sub.user._id,
+        name: sub.user.name,
+        email: sub.user.email,
+      },
+      planName: sub.planName,
+      stripeSubscriptionId: sub.stripeSubscriptionId,
+      stripeCustomerId: sub.stripeCustomerId,
+      stripePriceId: sub.stripePriceId,
+      stripeProductId: sub.stripeProductId,
+      status: sub.status,
+      currentPeriodEnd: sub.currentPeriodEnd,
+      cancelAtPeriodEnd: sub.cancelAtPeriodEnd,
+      createdAt: sub.createdAt,
+      updatedAt: sub.updatedAt,
+    }));
+
+    res.status(200).json({
+      success: true,
+      count: subscriptions.length,
+      data: formattedSubscriptions,
+    });
+  } catch (error) {
+    console.error('Error fetching active subscriptions:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch active subscriptions' });
+  }
+};
