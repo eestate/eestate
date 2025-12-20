@@ -1,12 +1,41 @@
-# React + Vite
+🏡 Eestate – Real Estate Marketplace
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Eestate is a full-stack real estate marketplace web application that connects property owners/agents with potential buyers or renters through a modern, user-friendly platform. The application allows users to browse, search, and filter properties based on location, price, property type, and other criteria, providing a seamless property discovery experience.
 
-Currently, two official plugins are available:
+The platform includes secure user authentication and role-based access control using JWT. Different roles such as users, agents, and admins have access to specific features. Users can view property details, interact with maps, and contact agents, while agents can list and manage their properties through a dedicated dashboard.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Estate integrates interactive maps using Leaflet.js, enabling users to visually explore property locations. Each listing displays detailed property information, images, pricing, and amenities, helping users make informed decisions.
 
-## Expanding the ESLint configuration
+The application also includes an agent subscription and payment system, where agents can list a limited number of properties for free and must subscribe to add more listings. This introduces a real-world monetization model into the platform. Admins can manage users, properties, and subscriptions through an admin dashboard, ensuring platform moderation and data integrity.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+The frontend is built with React.js, emphasizing reusable components, responsive layouts, and efficient state management. The backend is developed using Node.js and Express, exposing RESTful APIs for property management, authentication, and subscriptions, with MongoDB as the primary database.
+
+🛠️ Tech Stack
+
+Frontend: React.js, JavaScript (ES6+), Tailwind CSS
+
+Backend: Node.js, Express.js, REST APIs
+
+Database: MongoDB
+
+Authentication: JWT, Role-based access
+
+Maps: Leaflet.js
+
+Payments: Stripe (Agent subscriptions)
+
+Tools: Git, GitHub, Cloudinary
+
+🎯 Key Features & Highlights
+
+Advanced property search and filtering
+
+Role-based access for users, agents, and admins
+
+Interactive map integration for property locations
+
+Agent subscription model with secure payments
+
+Admin dashboard for platform management
+
+Scalable and component-based frontend architecture
